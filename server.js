@@ -2,6 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
+import userRoutes from './routes/User.routes.js'
+import uploadRoutes from './routes/upload.routes.js'
 
 dotenv.config();
 const app = express();
@@ -11,6 +13,9 @@ app.use(cors());
 app.use(express.json());
 
 connectDB();
+
+app.use('/api/v1/users',userRoutes)
+app.use('/api/v1/',uploadRoutes)
 
 // Simple test route
 app.get("/", (req, res) => {
