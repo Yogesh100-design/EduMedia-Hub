@@ -31,5 +31,6 @@ const fileFilter = (req, file, cb) => {
     : cb(new Error("Invalid file type!"), false);
 };
 
+// Export multer instance
 const upload = multer({ storage, fileFilter });
 export default upload;

@@ -1,50 +1,38 @@
 import { Router } from "express";
 import upload from "../middleware/Upload.middleware.js";
-import File from "../models/file.js";
+import cloudinary from "../config/cloudinary.js";
+import File from "../models/file.js"
 
 const router = Router();
 
 // Single file upload
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
-    // Save metadata in MongoDB
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    // Upload file to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "myAppUploads",
+    });
+
+    // Save file metadata in MongoDB
     const fileData = await File.create({
       originalName: req.file.originalname,
       filename: req.file.filename,
       path: req.file.path,
       size: req.file.size,
       mimetype: req.file.mimetype,
+      uploadedBy: req.body.user || "anonymous", // optional
+      cloudinaryUrl: result.secure_url,
+      cloudinaryId: result.public_id,
     });
 
-    res.json({
-      message: "File uploaded and saved in DB successfully 🚀",
+    res.status(201).json({
+      message: "File uploaded to Cloudinary & saved in DB successfully 🚀",
       file: fileData,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Multiple files upload
-router.post("/uploads", upload.array("files", 5), async (req, res) => {
-  try {
-    const filesData = await Promise.all(
-      req.files.map((file) =>
-        File.create({
-          originalName: file.originalname,
-          filename: file.filename,
-          path: file.path,
-          size: file.size,
-          mimetype: file.mimetype,
-        })
-      )
-    );
-
-    res.json({
-      message: "Files uploaded and saved in DB successfully 🚀",
-      files: filesData,
-    });
-  } catch (error) {
+    console.error(error);
     res.status(500).json({ message: error.message });
   }
 });
