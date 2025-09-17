@@ -2,6 +2,8 @@ import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponce from "../utils/apiResponce.js";
 import ApiError from "../utils/apiError.js";
 import User from "../models/User.js";
+import jwt from "jsonwebtoken";
+
 
 export const registerUser = asyncHandler(async (req , res)=>{
     const {username , email , password } = req.body;
@@ -24,6 +26,7 @@ export const registerUser = asyncHandler(async (req , res)=>{
     .json(new ApiResponce(201 , "User registered successfully" , newUser))
 })
 
+
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -44,9 +47,52 @@ export const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid email or password");
   }
 
-  // Send success response
-  return res
-    .status(200)
-    .json(new ApiResponce(200, "Logged in successfully", user));
+  // Generate tokens
+  const accessToken = jwt.sign(
+    { userId: user._id }, 
+    process.env.JWT_SECRET, 
+    { expiresIn: "15m" } // Access token valid for 15 minutes
+  );
+
+  const refreshToken = jwt.sign(
+    { userId: user._id }, 
+    process.env.REFRESH_SECRET, 
+    { expiresIn: "7d" } // Refresh token valid for 7 days
+  );
+
+  // Optionally, store refresh token in DB or HTTP-only cookie
+  // Example using cookie:
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  // Send response
+  return res.status(200).json(
+    new ApiResponce(200, "Logged in successfully", {
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+      accessToken,
+    })
+  );
 });
+
+export const logoutUser = asyncHandler(async (req, res) => {
+  // Clear the refresh token cookie
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+
+  return res.status(200).json({
+    message: "Logged out successfully ✅",
+  });
+});
+
 
