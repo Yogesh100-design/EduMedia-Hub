@@ -6,7 +6,11 @@ import jwt from "jsonwebtoken";
 
 
 export const registerUser = asyncHandler(async (req , res)=>{
-    const {username , email , password } = req.body;
+    const {username , email , password , role } = req.body;
+
+    if (!["student","teacher","alumni","mentor"].includes(role)) {
+    return res.status(400).json({ error: "Invalid role" });
+  }
 
     const checkExistingUser = await User.findOne({email});
 
@@ -18,7 +22,8 @@ export const registerUser = asyncHandler(async (req , res)=>{
         {
             username,
             email,
-            password
+            password,
+            role
         }
     )
     return res 
@@ -28,7 +33,7 @@ export const registerUser = asyncHandler(async (req , res)=>{
 
 
 export const loginUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password , role } = req.body;
 
   // Check required fields
   if (!email || !password) {
@@ -36,7 +41,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   }
 
   // Find user by email
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email , role });
   if (!user) {
     throw new ApiError(404, "User does not exist");
   }
