@@ -16,6 +16,18 @@ const UserSchema = new Schema(
       required: true,
       unique: true,
     },
+    role:{
+      type : String,
+      enum: ["student", "teacher", "alumni", "mentor"],
+      required:true
+    },
+    profileImg:{
+      type:String
+    },
+    bio:{
+      type: String
+    }
+    
   },
   { timestamps: true }
 );
