@@ -20,7 +20,7 @@ export default function SignIn() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
-        credentials: "include", // for refresh token cookie
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -29,15 +29,29 @@ export default function SignIn() {
         throw new Error(data.error || data.message || "Login failed");
       }
 
-      alert("✅ Login successful");
+      // extract token and role
+      const token = data.token || data.accessToken || data.data?.accessToken;
+      const role = data.user?.role || data.data?.user?.role;
 
-      // store access token
-      if (data.data?.accessToken) {
-        localStorage.setItem("authToken", data.data.accessToken);
+
+      if (!token || !role) {
+        throw new Error("Invalid server response: missing token or role");
       }
 
-      // redirect to home/dashboard
-      navigate("/");
+      // store token + role
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("userRole", role);
+
+      // redirect by role
+      if (role === "student") {
+        navigate("/student");
+      } else if (role === "teacher") {
+        navigate("/teacher");
+      } else if (role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/unauthorized");
+      }
     } catch (err) {
       alert("❌ " + err.message);
     } finally {
@@ -64,10 +78,7 @@ export default function SignIn() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email Address
               </label>
               <input
@@ -85,10 +96,7 @@ export default function SignIn() {
 
             {/* Password */}
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="relative mt-1">
@@ -149,10 +157,7 @@ export default function SignIn() {
 
             {/* Role */}
             <div>
-              <label
-                htmlFor="role"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
                 Role
               </label>
               <select
@@ -175,10 +180,7 @@ export default function SignIn() {
               className="w-full flex justify-center items-center gap-2 rounded-lg bg-indigo-600 text-white py-2.5 font-medium hover:bg-indigo-700 transition disabled:opacity-60"
             >
               {loading && (
-                <svg
-                  className="animate-spin h-5 w-5"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                   <circle
                     className="opacity-25"
                     cx="12"
@@ -202,10 +204,7 @@ export default function SignIn() {
           {/* Footer */}
           <p className="mt-6 text-center text-xs text-gray-500">
             Don’t have an account?{" "}
-            <a
-              href="/register"
-              className="font-medium text-indigo-600 hover:underline"
-            >
+            <a href="/register" className="font-medium text-indigo-600 hover:underline">
               Sign up
             </a>
           </p>

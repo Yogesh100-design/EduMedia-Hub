@@ -128,7 +128,7 @@ export default function Register() {
                 <option value="student">Student</option>
                 <option value="mentor">Mentor</option>
                 <option value="alumini">Alumini</option>
-                <option value="teacher">Teacher / Creator</option>
+                <option value="teacher">Teacher </option>
               </select>
             </div>
 

@@ -11,6 +11,9 @@ import { Routes, Route } from "react-router-dom"
 import Features from './components/Feutures'
 import Pricing from './components/Pricing'
 import Docs from './components/Doc'
+import StudentDashboard from './components/studentLoginDashboard'
+import Profile from './components/profile'
+import TeacherPostCreator from './components/TeacherLoginDashboard'
 import HeroCursor from './components/Animated'
 
 function App() {
@@ -28,6 +31,9 @@ function App() {
         <Route path='/feutures' element={<Features/>} />
         <Route path='/pricing' element={<Pricing/>} />
         <Route path='/Docs' element={<Docs/>} />
+        <Route path='/student' element={<StudentDashboard/>} />
+        <Route path='/teacher' element={<TeacherPostCreator/>} />
+        <Route path='/profile' element={<Profile/>} />
         {/* Add more routes here */}
       </Routes>
 
