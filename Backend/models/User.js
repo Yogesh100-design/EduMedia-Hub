@@ -24,6 +24,12 @@ const UserSchema = new Schema(
     profileImg:{
       type:String
     },
+    subscriptions: [
+      {
+      type: mongoose.Types.ObjectId,
+      ref: "User"
+    }
+    ],
     bio:{
       type: String
     }
