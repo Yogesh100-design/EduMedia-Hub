@@ -18,6 +18,6 @@ router.get("/feed" , protect ,  getStudentFeed);
 
 // Like & Comment
 router.post("/:postId/like",  toggleLike);
-router.post("/:postId/comment", addComment);
+router.post("/:postId/comment", protect , addComment);
 
 export default router;
