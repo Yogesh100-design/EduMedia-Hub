@@ -56,9 +56,9 @@ export const getStudentFeed = async (req, res) => {
     // Fetch student and populate subscriptions
     const user = await User.findById(userId).populate("subscriptions");
 
-    if (user.role !== "student") {
-      return res.status(403).json({ message: "Only students can view feed" });
-    }
+    // if (user.role !== "student") {
+    //   return res.status(403).json({ message: "Only students can view feed" });
+    // }
 
     let posts;
 
@@ -124,17 +124,35 @@ export const addComment = async (req, res) => {
     const { postId } = req.params;
     const { text } = req.body;
 
-    if (!text)
-      return res.status(400).json({ message: "Comment text is required" });
+    if (!text?.trim()) {
+      return res.status(400).json({ success: false, message: "Comment text is required" });
+    }
 
-    const post = await Post.findById(postId);
-    if (!post) return res.status(404).json({ message: "Post not found" });
+    const post = await Post.findById(postId).populate("comments.user", "username profileImg role");
+    if (!post) {
+      return res.status(404).json({ success: false, message: "Post not found" });
+    }
 
-    post.comments.push({ user: userId, text });
+    const newComment = {
+      user: userId,
+      text: text.trim(),
+      createdAt: new Date(),
+    };
+
+    post.comments.push(newComment);
     await post.save();
 
-    res.status(201).json({ success: true, comments: post.comments });
+    // Return the new comment instead of entire array for efficiency
+    const savedComment = post.comments[post.comments.length - 1];
+
+    res.status(201).json({
+      success: true,
+      message: "Comment added successfully",
+      comment: savedComment,
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Error adding comment:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
