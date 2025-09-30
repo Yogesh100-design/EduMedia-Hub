@@ -28,7 +28,7 @@ export const registerUser = asyncHandler(async (req , res)=>{
     )
     return res 
     .status(201)
-    .json(new ApiResponce(201 , "User registered successfully" , newUser))
+    .json(new ApiResponce(201 , "User registered successfully" , newUser ))
 })
 
 
@@ -76,15 +76,17 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   // Send response
   return res.status(200).json(
-    new ApiResponce(200, "Logged in successfully", {
-      user: {
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-      },
-      accessToken,
-    })
-  );
+  new ApiResponce(200, "Logged in successfully", {
+    user: {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role, // 👈 add this
+    },
+    accessToken,
+  })
+);
+
 });
 
 export const logoutUser = asyncHandler(async (req, res) => {
