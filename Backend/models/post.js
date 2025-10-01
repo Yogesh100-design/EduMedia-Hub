@@ -8,16 +8,20 @@ const commentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const mediaSchema = new mongoose.Schema({
+  url: { type: String }, // file path (uploads/xyz.png)
+  type: { type: String, enum: ["image", "video", "pdf", "file"] },
+});
+
 const postSchema = new mongoose.Schema(
   {
-    author: { type: mongoose.Schema.Types.ObjectId, ref: "User" , required : true  },
+    author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    title: { type: String, required: true },
     content: { type: String }, // optional text
-    media: [
-      {
-        url: { type: String }, // file path (uploads/xyz.png)
-        type: { type: String, enum: ["image", "video", "pdf", "text"] },
-      },
-    ],
+    type: { type: String, default: "Announcement" }, // Announcement, Resource, etc.
+    audience: { type: String, default: "All Students" },
+    tags: [{ type: String }],
+    media: [mediaSchema],
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     comments: [commentSchema],
   },

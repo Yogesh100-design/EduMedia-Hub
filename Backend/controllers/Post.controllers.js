@@ -5,60 +5,77 @@ import path from "path";
 
 export const createPost = async (req, res) => {
   try {
+    // Destructure text fields from req.body
     const { title, content, type, audience } = req.body;
-    const tags = req.body.tags || [];
 
-    // Map uploaded files to match schema
+    // --- ENHANCED TAG HANDLING ---
+    // Safely handles tags coming in as a single string or an array from FormData.
+    let tags = req.body.tags || [];
+
+    if (typeof tags === 'string') {
+      tags = [tags];
+    }
+
+    // Ensure it is an array and clean up the tags (trim whitespace, remove empty ones)
+    tags = Array.isArray(tags) ? tags.map(t => String(t).trim()).filter(t => t.length > 0) : [];
+    // -----------------------------
+
+    // Map uploaded files (from Multer's req.files) to match the database schema
     const media =
       req.files?.map((file) => ({
-        url: file.path.replace("\\", "/"), // handle Windows paths
+        // Multer on disk storage provides file.path
+        url: file.path.replace(/\\/g, "/"), // Ensure URL uses forward slashes
         type: file.mimetype.startsWith("image")
           ? "image"
           : file.mimetype.startsWith("video")
           ? "video"
           : file.mimetype === "application/pdf"
           ? "pdf"
-          : "text",
+          : "file",
       })) || [];
 
-    // Create post
     const newPost = await Post.create({
       title,
       content,
       type,
       audience,
       tags,
-      media, // use the correct schema field
-      author: req.user._id, // logged-in user
+      media,
+      author: req.user._id, // Assuming auth middleware set req.user
     });
 
-    // Populate author and comments
+    // 2. Populate the document for the response (e.g., author details)
     const populatedPost = await Post.findById(newPost._id)
       .populate("author", "username email role profileImg")
-      .populate("comments.user", "username");
+      .populate("comments.user", "username"); // Assuming comments are sub-documents/nested
 
+    // 3. Send success response with the fully populated post
     res.status(201).json({
       success: true,
       message: "Post created successfully",
       post: populatedPost,
     });
+    
+    // ----------------------------------------------------
+    // END OF CLEANED DATABASE LOGIC
+    // ----------------------------------------------------
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server Error" });
+    console.error("Error creating post:", err);
+    // Send a 500 status for server errors
+    res.status(500).json({ success: false, message: "Server Error", error: err.message });
   }
 };
 
-// Define the async function inside useEffect
+
+
+
 export const getStudentFeed = async (req, res) => {
   try {
     const userId = req.user._id;
 
     // Fetch student and populate subscriptions
     const user = await User.findById(userId).populate("subscriptions");
-
-    // if (user.role !== "student") {
-    //   return res.status(403).json({ message: "Only students can view feed" });
-    // }
 
     let posts;
 
@@ -69,7 +86,7 @@ export const getStudentFeed = async (req, res) => {
         .map((t) => t._id);
 
       posts = await Post.find({ author: { $in: subscribedTeacherIds } })
-        .populate("author", "username email role")
+        .populate("author", "username email role profileImg") // include profileImg
         .populate("comments.user", "username")
         .sort({ createdAt: -1 });
 
@@ -79,17 +96,33 @@ export const getStudentFeed = async (req, res) => {
       const allTeacherIds = allTeachers.map((t) => t._id);
 
       posts = await Post.find({ author: { $in: allTeacherIds } })
-        .populate("author", "username email role")
+        .populate("author", "username email role profileImg")
         .populate("comments.user", "username")
         .sort({ createdAt: -1 });
     }
 
-    res.json({ success: true, posts });
+    // Map posts to include all fields returned by createPost
+    const formattedPosts = posts.map(post => ({
+      _id: post._id,
+      title: post.title,
+      content: post.content,
+      type: post.type,
+      audience: post.audience,
+      tags: post.tags,
+      media: post.media,
+      author: post.author,
+      comments: post.comments,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt
+    }));
+
+    res.status(200).json({ success: true, posts: formattedPosts });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    console.error("Error fetching student feed:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
+
 
 
 
