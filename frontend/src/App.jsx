@@ -15,6 +15,7 @@ import StudentDashboard from './components/studentLoginDashboard'
 import Profile from './components/profile'
 import TeacherPostCreator from './components/TeacherLoginDashboard'
 import TeacherPost from './components/Teacher'
+import Career from './components/CareerHub'
 import HeroCursor from './components/Animated'
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
         <Route path='/teacher' element={<TeacherPost/>} />
         <Route path='/teacher-post' element={<TeacherPostCreator/>} />
         <Route path='/profile' element={<Profile/>} />
+        <Route path='/Carrer-guidance' element={<Career/>} />
         {/* Add more routes here */}
       </Routes>
 
