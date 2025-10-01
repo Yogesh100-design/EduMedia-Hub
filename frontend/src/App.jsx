@@ -14,7 +14,7 @@ import Docs from './components/Doc'
 import StudentDashboard from './components/studentLoginDashboard'
 import Profile from './components/profile'
 import TeacherPostCreator from './components/TeacherLoginDashboard'
-import TeacherDashboard from './components/Teacher'
+import TeacherPost from './components/Teacher'
 import HeroCursor from './components/Animated'
 
 function App() {
@@ -33,7 +33,7 @@ function App() {
         <Route path='/pricing' element={<Pricing/>} />
         <Route path='/Docs' element={<Docs/>} />
         <Route path='/student' element={<StudentDashboard/>} />
-        <Route path='/teacher' element={<TeacherDashboard/>} />
+        <Route path='/teacher' element={<TeacherPost/>} />
         <Route path='/teacher-post' element={<TeacherPostCreator/>} />
         <Route path='/profile' element={<Profile/>} />
         {/* Add more routes here */}

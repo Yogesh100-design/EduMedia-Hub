@@ -126,8 +126,6 @@ export default function Register() {
                 className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="student">Student</option>
-                <option value="mentor">Mentor</option>
-                <option value="alumini">Alumini</option>
                 <option value="teacher">Teacher </option>
               </select>
             </div>
