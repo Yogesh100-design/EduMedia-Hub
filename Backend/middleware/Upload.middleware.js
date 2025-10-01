@@ -27,6 +27,8 @@ const fileFilter = (req, file, cb) => {
     "application/pdf",
     "text/plain",
   ];
+  // Note: MulterError: Unexpected field occurs BEFORE fileFilter runs, 
+  // so the file type logic is okay, but not the cause of the original error.
   allowedTypes.includes(file.mimetype)
     ? cb(null, true)
     : cb(new Error("Invalid file type!"), false);
