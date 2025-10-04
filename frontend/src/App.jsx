@@ -24,6 +24,7 @@ import CareerBlogs from './components/CarrerBlog'
 import BlogWriter from './components/CarrerBlogWrite'
 import CompanyReview from './components/ComponyReview'
 import SalaryInsights from './components/SalaryInsighs'
+import AboutPage from './components/About'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -53,7 +54,7 @@ function App() {
         <Route path='/career-blogs-write' element={<BlogWriter/>} />
         <Route path='/company-reviews' element={<CompanyReview/>} />
         <Route path='/salary-insights' element={<SalaryInsights/>} />
-        {/* Add more routes here */}
+        <Route path='/About' element={<AboutPage/>} />
       </Routes>
 
       <Footer />
