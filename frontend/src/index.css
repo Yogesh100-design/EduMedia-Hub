@@ -1,2 +1,21 @@
 
 @import "tailwindcss";
+
+.shimmer {
+  background: linear-gradient(90deg, #1e293b 40%, #334155 50%, #1e293b 60%);
+  background-size: 300% 100%;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
+.animate-marquee {
+  display: flex;
+  animation: marquee 25s linear infinite;
+}
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}

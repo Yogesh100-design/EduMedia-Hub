@@ -15,8 +15,15 @@ import StudentDashboard from './components/studentLoginDashboard'
 import Profile from './components/profile'
 import TeacherPostCreator from './components/TeacherLoginDashboard'
 import TeacherPost from './components/Teacher'
-import Career from './components/CareerHub'
-import HeroCursor from './components/Animated'
+import InterviewQuestions from './components/InterviewQ'
+import PlacementGuidance from './components/PlacementGuidance'
+import Resources from './components/Resources'
+import ResumeBuilder from './components/ResumeBuilder'
+import MockTestSoftSkills from './components/MockTest'
+import CareerBlogs from './components/CarrerBlog'
+import BlogWriter from './components/CarrerBlogWrite'
+import CompanyReview from './components/ComponyReview'
+import SalaryInsights from './components/SalaryInsighs'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -37,7 +44,15 @@ function App() {
         <Route path='/teacher' element={<TeacherPost/>} />
         <Route path='/teacher-post' element={<TeacherPostCreator/>} />
         <Route path='/profile' element={<Profile/>} />
-        <Route path='/Carrer-guidance' element={<Career/>} />
+        <Route path='/interview-questions' element={<InterviewQuestions/>} />
+        <Route path='/placement-guidance' element={<PlacementGuidance/>} />
+        <Route path='/resources' element={<Resources/>} />
+        <Route path='/resume-builder' element={<ResumeBuilder/>} />
+        <Route path='/mock-tests' element={<MockTestSoftSkills/>} />
+        <Route path='/career-blogs' element={<CareerBlogs/>} />
+        <Route path='/career-blogs-write' element={<BlogWriter/>} />
+        <Route path='/company-reviews' element={<CompanyReview/>} />
+        <Route path='/salary-insights' element={<SalaryInsights/>} />
         {/* Add more routes here */}
       </Routes>
 
