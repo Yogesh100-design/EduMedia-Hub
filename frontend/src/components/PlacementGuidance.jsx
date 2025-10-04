@@ -1,270 +1,270 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
+// Using lucide-react for modern icons
+import { Zap, BookOpen, MessageSquare, Code, Users, Map, X } from 'lucide-react'; 
 
-const LOCAL_STORAGE_KEY = 'PLACEMENT_CHECKLIST_STATUS';
-
-const getInitialCompletionStatus = () => {
-  try {
-    return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || {};
-  } catch {
-    return {};
-  }
-};
-
-/* -------------  EXPANDED CONTENT ------------- */
-const guidanceSections = [
+// Data structure for the guidance cards
+const guidanceCards = [
   {
-    title: "📄 Resume & Portfolio",
-    items: [
-      "1-page (2 only if 5+ yrs).",
-      "Quantify: “Reduced time by 42 %”.",
-      "Add GitHub / LinkedIn / Dev-portfolio links.",
-      "Export PDF → FirstName_Role_College.pdf",
-      "Host 3 polished projects with live demos & README GIF.",
-    ],
+    title: "Resume Building",
+    description: "Craft a standout resume that passes ATS filters and impresses recruiters.",
+    icon: BookOpen,
+    color: "cyan",
+    action: "Redirecting to Resume Builder...",
+    link: "https://novoresume.com/resume-builder" 
   },
   {
-    title: "🧠 Aptitude + Puzzles",
-    items: [
-      "Indiabix core topics (Time & Work, P&C, Probability).",
-      "Solve 10 puzzles/week (PuzzleFry / GFG).",
-      "Maintain formula cheat-sheet.",
-      "30-min rapid-fire session every morning.",
-      "Track speed vs accuracy in spreadsheet.",
-    ],
+    title: "Interview Preparation",
+    description: "Practice mock interviews, common questions, and body-language tips.",
+    icon: MessageSquare,
+    color: "lime",
+    action: "Launching Interview Simulator...",
+    link: "https://www.pramp.com"
   },
   {
-    title: "💻 Online-Assessments",
-    items: [
-      "LeetCode weekly contest (minimum 2 contests).",
-      "Hackerrank Certification badges (SQL, PS, React).",
-      "CodeSignal 300+ threshold.",
-      "HackerEarth practice tracks (TCS-NQT style).",
-      "60-min company-specific mock (TCS, Infy, Wipro, Amazon).",
-    ],
+    title: "Aptitude & Reasoning",
+    description: "Sharpen quantitative, logical, and verbal skills with timed quizzes.",
+    icon: Zap,
+    color: "fuchsia",
+    action: "Starting Aptitude Quiz...",
+    link: "https://www.indiabix.com/aptitude/questions-and-answers/"
   },
   {
-    title: "🎯 DSA + Core CS",
-    items: [
-      "Pattern checklist: sliding-window, two-pointer, prefix-sum, bit-manip, trie.",
-      "Revise OS (scheduling, paging, deadlock), DBMS (normalisation, joins, ACID), Networks (TCP vs UDP, OSI).",
-      "Solve 1 hard every Sunday; write editorial in Notion.",
-      "Dry-run on whiteboard while speaking aloud.",
-      "Time/Space complexity tag every solution.",
-    ],
+    title: "Coding Practice",
+    description: "Solve top interview problems and optimize time complexity.",
+    icon: Code,
+    color: "red",
+    action: "Opening Coding Environment...",
+    link: "https://leetcode.com"
   },
   {
-    title: "🗣️ Technical Interview",
-    items: [
-      "Think out loud → approach first, then code.",
-      "Handle edge-cases (empty, single, max input).",
-      "Clean code: meaningful vars, helper funcs.",
-      "Run custom test before saying ‘done’.",
-      "Ask clarifying questions; treat interviewer as teammate.",
-    ],
+    title: "Group Discussion",
+    description: "Master GD etiquette, current affairs, and effective communication skills.",
+    icon: Users,
+    color: "amber",
+    action: "Joining Group Discussion Session...",
+    link: "https://gdtopics.com"
   },
   {
-    title: "🤝 Behavioural / HR",
-    items: [
-      "STAR framework stories (conflict, failure, leadership, initiative, success).",
-      "Why us? → link product + culture + your skills.",
-      "Salary homework: Glassdoor, Levels.fyi → give range, not number.",
-      "Prepare 3 questions for them (team structure, growth, onboarding).",
-      "Record yourself → improve body-language & pace.",
-    ],
-  },
-  {
-    title: "🌐 Online Presence",
-    items: [
-      "GitHub pinned repos with demo GIF + clean README.",
-      "LinkedIn headline: “Aspiring SDE | Java • React”.",
-      "Write 1 technical article/month (Medium/Dev.to).",
-      "Join 2–3 tech communities (Discord, Slack, Telegram).",
-      "Keep personal socials private / professional.",
-    ],
-  },
-  {
-    title: "🏢 Company Research",
-    items: [
-      "Tech-stack, engineering blogs, recent releases.",
-      "Financial health (for start-ups: runway, funding rounds).",
-      "Glassdoor interview experiences (3-month window).",
-      "Competitor comparison → 1 slide summary.",
-      "Connect with employees → informational chat.",
-    ],
-  },
-  {
-    title: "💬 Offer & Negotiation",
-    items: [
-      "Don’t accept on call → ask for written offer.",
-      "Evaluate CTC components (fixed, variable, stocks, bonus).",
-      "Negotiate respectfully with data (counter offers, market range).",
-      "Notice-period & joining date clarity.",
-      "Get everything in writing before rejecting other offers.",
-    ],
-  },
-  {
-    title: "🧘 Mental & Physical Health",
-    items: [
-      "7–8 hrs sleep; no screens 30 min before bed.",
-      "30-min workout / walk / yoga daily.",
-      "5-min breathing before interview → reduce cortisol.",
-      "Celebrate small wins → keep motivation high.",
-      "Reach out to mentors / peers when stuck.",
-    ],
+    title: "Career Mapping",
+    description: "Discover roles that fit your skills and set a clear professional roadmap.",
+    icon: Map,
+    color: "blue",
+    action: "Accessing Career Explorer...",
+    link: "https://www.careerexplorer.com/careers/"
   },
 ];
 
-const allItems = guidanceSections.flatMap((s, secIdx) =>
-  s.items.map((txt, i) => ({
-    id: `${secIdx}-${i}`,
-    txt,
-    secIdx,
-  }))
-);
-
-const PlacementGuidance = () => {
-  const [openSec, setOpenSec] = useState(null);
-  const [done, setDone] = useState(getInitialCompletionStatus);
-
-  useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(done));
-  }, [done]);
-
-  const toggleDone = (id) =>
-    setDone((p) => ({ ...p, [id]: !p[id] }));
-
-  const completedCount = useMemo(
-    () => allItems.filter((it) => done[it.id]).length,
-    [done]
-  );
-  const progress = Math.round((completedCount / allItems.length) * 100);
+// Reusable Notification component
+const Notification = ({ message, onClose }) => {
+  if (!message) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white py-16 px-6">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-5xl font-extrabold text-center mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-400">
-          Placement Guidance Checklist
-        </h2>
-        <p className="text-center text-slate-300 mb-10">
-          Track every step toward your dream offer
-        </p>
+    <div className="fixed top-5 left-1/2 transform -translate-x-1/2 z-50">
+      <div className="bg-gray-700 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center space-x-3 animate-slide-down border border-gray-600">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-lime-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        <span>{message}</span>
+        <button onClick={onClose} className="text-gray-400 hover:text-white ml-4">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
-        {/* Progress */}
-        <div className="mb-10 p-5 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-slate-300">Overall Progress</span>
-            <span className="text-xl font-bold text-cyan-400">{progress}%</span>
-          </div>
-          <div className="w-full bg-slate-800 rounded-full h-3">
-            <div
-              className={`h-3 rounded-full transition-all duration-500 ${
-                progress === 100 ? "bg-green-500" : "bg-cyan-500"
-              }`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="mt-2 text-xs text-slate-400 text-right">
-            {completedCount} / {allItems.length} tasks completed
+// Detail Modal Component for Expanded Content
+const DetailModal = ({ card, onClose, triggerNotification }) => {
+  if (!card) return null;
+
+  const DetailIcon = card.icon;
+  // Mock detailed content for demonstration
+  const mockDetails = {
+    "Resume Building": "This comprehensive guide provides step-by-step templates, keyword optimization tips, and a powerful list of action verbs to create an ATS-friendly resume. Focus on quantifiable achievements and tailoring your content for specific job descriptions.",
+    "Interview Preparation": "Access a massive library of behavioral, technical, and system design interview questions. Includes video tutorials on confident body language, handling stress, and effective salary negotiation tactics.",
+    "Aptitude & Reasoning": "Practice hundreds of mock tests covering quantitative aptitude, logical reasoning, and verbal ability, all timed to simulate real exam conditions. Get real-time scoring and detailed solution analysis to track your improvement.",
+    "Coding Practice": "A curated, structured learning path of Data Structures and Algorithms problems categorized by complexity (Easy, Medium, Hard). Supports popular languages (Python, Java, C++) and features an integrated debugger.",
+    "Group Discussion": "Learn key strategies for contributing effectively in a Group Discussion. Topics cover current affairs, business ethics, and social issues, with tips on leadership, active listening, and conflict resolution.",
+    "Career Mapping": "An interactive tool to match your skills, interests, and academic background with potential career tracks (e.g., Software Engineer, Data Scientist, Product Manager). Includes required skill checklists and personalized learning roadmaps.",
+  };
+
+  // Determine button text based on card title
+  const buttonText = card.title.includes('Quiz') || card.title.includes('Solve') || card.title.includes('Join') ? 'Start Session' : 'Go to Resource';
+  
+  // Tailwind classes for dark mode contrast
+  const colorClasses = {
+      'cyan': { background: 'bg-cyan-900/30', border: 'border-cyan-500', text: 'text-cyan-400', button: 'bg-cyan-600 hover:bg-cyan-500' },
+      'lime': { background: 'bg-lime-900/30', border: 'border-lime-500', text: 'text-lime-400', button: 'bg-lime-600 hover:bg-lime-500' },
+      'fuchsia': { background: 'bg-fuchsia-900/30', border: 'border-fuchsia-500', text: 'text-fuchsia-400', button: 'bg-fuchsia-600 hover:bg-fuchsia-500' },
+      'red': { background: 'bg-red-900/30', border: 'border-red-500', text: 'text-red-400', button: 'bg-red-600 hover:bg-red-500' },
+      'amber': { background: 'bg-amber-900/30', border: 'border-amber-500', text: 'text-amber-400', button: 'bg-amber-600 hover:bg-amber-500' },
+      'blue': { background: 'bg-blue-900/30', border: 'border-blue-500', text: 'text-blue-400', button: 'bg-blue-600 hover:bg-blue-500' },
+  }
+
+  const currentColors = colorClasses[card.color] || colorClasses['cyan'];
+  
+  // New handler for the modal's primary button
+  const handlePrimaryAction = () => {
+    onClose(); 
+    triggerNotification(card.action);
+    if (card.link) {
+      window.open(card.link, "_blank"); // Open in new tab
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300 animate-fade-in" onClick={onClose}>
+      <div 
+        className="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg md:max-w-xl lg:max-w-2xl transform transition-all duration-300 overflow-hidden border border-gray-700 animate-zoom-in" 
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div className={`p-6 md:p-8 ${currentColors.background} border-b-4 ${currentColors.border} flex items-center`}>
+          <DetailIcon className={`w-8 h-8 md:w-10 md:h-10 ${currentColors.text} mr-4`} />
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-50">{card.title}</h2>
+        </div>
+        
+        {/* Modal Content */}
+        <div className="p-6 md:p-8">
+          <p className="text-gray-300 mb-6 leading-relaxed text-base">
+            {mockDetails[card.title] || "Detailed information for this guide is currently unavailable."}
           </p>
+          
+          <p className="font-semibold text-gray-100 mb-4 text-lg">Next Step:</p>
+          
+          <div className="p-4 bg-gray-900 rounded-lg text-sm text-gray-400 italic border border-gray-700">
+            {card.action}
+          </div>
         </div>
-
-        {/* Accordion */}
-        <div className="space-y-4">
-          {guidanceSections.map((s, idx) => {
-            const secItems = allItems.filter((i) => i.secIdx === idx);
-            const secDone = secItems.filter((i) => done[i.id]).length;
-            const secProgress = Math.round((secDone / secItems.length) * 100);
-
-            return (
-              <div
-                key={s.title}
-                className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md overflow-hidden shadow-lg"
-              >
-                <button
-                  onClick={() => setOpenSec((p) => (p === idx ? null : idx))}
-                  className="w-full flex items-center justify-between p-5 hover:bg-white/5 transition"
-                >
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-semibold text-cyan-300">
-                      {s.title}
-                    </h3>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                        secProgress === 100
-                          ? "bg-green-500/20 text-green-300"
-                          : "bg-blue-500/20 text-blue-300"
-                      }`}
-                    >
-                      {secProgress}%
-                    </span>
-                  </div>
-                  <svg
-                    className={`w-6 h-6 text-cyan-400 transition-transform ${
-                      openSec === idx ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-
-                <div
-                  className={`grid transition-all duration-500 ease-in-out ${
-                    openSec === idx
-                      ? "grid-rows-[1fr] opacity-100"
-                      : "grid-rows-[0fr] opacity-0"
-                  }`}
-                >
-                  <div className="overflow-hidden">
-                    <ul className="space-y-3 px-6 pb-6 pt-2">
-                      {secItems.map((it) => (
-                        <li key={it.id} className="flex items-start">
-                          <input
-                            type="checkbox"
-                            id={it.id}
-                            checked={!!done[it.id]}
-                            onChange={() => toggleDone(it.id)}
-                            className="mt-1 mr-3 h-5 w-5 rounded accent-cyan-500"
-                          />
-                          <label
-                            htmlFor={it.id}
-                            className={`flex-1 cursor-pointer transition ${
-                              done[it.id]
-                                ? "line-through text-slate-500 italic"
-                                : "text-slate-200"
-                            }`}
-                          >
-                            {it.txt}
-                          </label>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* CTA */}
-        <div className="mt-16 text-center">
-          <a
-            href="https://www.unipune.ac.in/dept/science/statistics/pdf/Placement%20Brochure%202016-17-13-10-16.pdf"
-            className="inline-block px-10 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold shadow-xl shadow-blue-500/40 hover:scale-105 transition"
+        
+        {/* Modal Footer (Actions) */}
+        <div className="p-6 md:p-8 flex justify-between bg-gray-900 border-t border-gray-700">
+          <button
+            onClick={onClose}
+            className="text-gray-400 font-semibold px-4 py-2 rounded-lg border border-gray-600 hover:bg-gray-700 transition duration-300"
           >
-            Download Complete Guide (PDF)
-          </a>
+            Close
+          </button>
+          <button
+            onClick={handlePrimaryAction} 
+            className={`text-white px-6 py-3 rounded-lg font-semibold transition duration-300 shadow-lg ${currentColors.button}`}
+          >
+            {buttonText} →
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default PlacementGuidance;
+// Main Component
+const PlacementGuide = () => {
+  const [notification, setNotification] = useState('');
+  const [selectedCard, setSelectedCard] = useState(null); 
+
+  // Effect to hide the notification automatically
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification('');
+      }, 3000); 
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  // Generic handler for all card actions
+  const handleCardAction = (card) => {
+    setSelectedCard(card); // Open the detail modal
+  };
+
+  // Handler for the main CTA button
+  const handleCtaAction = () => {
+    setNotification("Booking session... Please check your email for confirmation!");
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-950 py-10 px-4 font-sans relative">
+      <style jsx global>{`
+        @keyframes slide-down {
+          0% { transform: translate(-50%, -100%); opacity: 0; }
+          100% { transform: translate(-50%, 0); opacity: 1; }
+        }
+        .animate-slide-down { animation: slide-down 0.3s ease-out forwards; }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+        @keyframes zoom-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-zoom-in { animation: zoom-in 0.3s ease-out forwards; }
+        @keyframes card-fade-up { to { opacity: 1; transform: translateY(0); } }
+        .card-enter-animation { opacity: 0; transform: translateY(20px); animation: card-fade-up 0.5s ease-out forwards; }
+        .card-1 { animation-delay: 0.1s; }
+        .card-2 { animation-delay: 0.2s; }
+        .card-3 { animation-delay: 0.3s; }
+        .card-4 { animation-delay: 0.4s; }
+        .card-5 { animation-delay: 0.5s; }
+        .card-6 { animation-delay: 0.6s; }
+      `}</style>
+      
+      <Notification message={notification} onClose={() => setNotification('')} />
+      <DetailModal card={selectedCard} onClose={() => setSelectedCard(null)} triggerNotification={setNotification} />
+
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter drop-shadow-lg animate-fade-in">
+            PLACEMENT <span className="text-fuchsia-500">ACCELERATOR</span>
+          </h1>
+          <p className="mt-4 text-lg text-gray-400 max-w-3xl mx-auto">
+            Structured, clear, and actionable steps to help you land your dream tech job.
+          </p>
+        </div>
+
+        {/* Cards Grid */}
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {guidanceCards.map((card, index) => {
+            const iconClasses = `text-${card.color}-400`;
+            const buttonClasses = `text-${card.color}-400 font-medium text-sm hover:text-${card.color}-300 transition duration-200`;
+
+            return (
+              <div
+                key={index}
+                className={`bg-gray-900 rounded-xl shadow-2xl hover:shadow-fuchsia-900/40 transition-all duration-300 p-6 border-t border-l border-gray-700/50 hover:scale-[1.03] hover:-translate-y-1 card-enter-animation card-${index + 1}`}
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className={`${iconClasses} mb-4`}>
+                  <card.icon className="w-10 h-10" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-50 mb-2">
+                  {card.title}
+                </h3>
+                <p className="text-gray-400 text-sm mb-4">
+                  {card.description}
+                </p>
+                <button 
+                  onClick={() => handleCardAction(card)} 
+                  className={buttonClasses}
+                >
+                  {card.title.includes('Quiz') || card.title.includes('Solve') || card.title.includes('Join') ? 'Start Now →' : 'Learn More →'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-20 text-center">
+          <button 
+            onClick={handleCtaAction}
+            className="bg-fuchsia-600 text-white px-10 py-5 rounded-xl font-bold text-xl shadow-2xl shadow-fuchsia-500/70 hover:bg-fuchsia-500 transition duration-300 transform hover:scale-[1.04] active:scale-100 uppercase tracking-wider"
+          >
+            Book a Free Counseling Session
+          </button>
+          <p className="mt-6 text-sm text-gray-500">
+            Click here to connect with a placement expert and map your career path today.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PlacementGuide;
