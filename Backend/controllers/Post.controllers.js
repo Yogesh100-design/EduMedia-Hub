@@ -8,8 +8,6 @@ export const createPost = async (req, res) => {
     // Destructure text fields from req.body
     const { title, content, type, audience } = req.body;
 
-    // --- ENHANCED TAG HANDLING ---
-    // Safely handles tags coming in as a single string or an array from FormData.
     let tags = req.body.tags || [];
 
     if (typeof tags === 'string') {
@@ -55,10 +53,7 @@ export const createPost = async (req, res) => {
       message: "Post created successfully",
       post: populatedPost,
     });
-    
-    // ----------------------------------------------------
-    // END OF CLEANED DATABASE LOGIC
-    // ----------------------------------------------------
+
 
   } catch (err) {
     console.error("Error creating post:", err);
@@ -124,9 +119,6 @@ export const getStudentFeed = async (req, res) => {
 };
 
 
-
-
-// Like / Unlike Post
 export const toggleLike = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -188,4 +180,3 @@ export const addComment = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
