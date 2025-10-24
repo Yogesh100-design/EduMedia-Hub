@@ -6,6 +6,7 @@ import connectDB from "./config/db.js";
 import userRoutes from "./routes/User.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import BlogRoute from "./routes/Blog.routes.js"
+import qnaRoutes from "./routes/qnaRoutes.js";
 
 
 dotenv.config();
@@ -39,6 +40,8 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1", uploadRoutes);
 app.use("/api/v1", BlogRoute);
+
+app.use("/api/qna", qnaRoutes);
 
 
 
