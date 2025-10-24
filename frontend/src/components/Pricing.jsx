@@ -34,7 +34,7 @@ export default function Pricing() {
     },
     {
       name: "Institution",
-      price: { monthly: 39, yearly: 29 },
+      price: { monthly: 39, yearly: 200 },
       description: "Scale across departments and campuses.",
       features: [
         "100 GB Cloudinary storage",

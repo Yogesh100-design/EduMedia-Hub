@@ -108,7 +108,7 @@ export default function EduMediaLandingPro() {
             MongoDB—built for students, educators, and institutions.
           </p>
 
-          <div className="mt-10 flex flex-col sm:flex-row gap-4">
+          <div className="mt-10 flex flex-col sm:flex-row gap-4 ">
             <Link
               to="/register"
               className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition transform hover:scale-105"
