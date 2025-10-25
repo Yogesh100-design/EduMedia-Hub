@@ -47,7 +47,7 @@ const MediaStrip = ({ media = [] }) => {
     <>
       <div className="grid gap-4 grid-cols-2 md:grid-cols-3 auto-rows-[12rem] mb-6">
         {media.map((file, idx) => {
-          const url = `${API_BASE_URL}/${file.url || file}`;
+          const url = file.url?.startsWith("http") ? file.url : `${API_BASE_URL}/${file.url || file}`;
           const type = file.type || getType(file);
           return (
             <div
@@ -87,7 +87,7 @@ const CommentSection = ({ postId, comments = [], onAdd }) => {
     const tempComment = {
       _id: Date.now(),
       text: text,
-      user: { username: "You (Posting)", profileImg: `https://i.pravatar.cc/40?u=${localStorage.getItem("userId")}` }
+      user: { username: "You", profileImg: `https://i.pravatar.cc/40?u=${localStorage.getItem("userId")}` }
     };
     onAdd(tempComment);
     setText("");
