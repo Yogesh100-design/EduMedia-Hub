@@ -34,12 +34,12 @@ const MediaPreview = ({ media, onRemove }) => (
         key={index}
         className="relative px-4 py-1 bg-cyan-400/10 text-cyan-300 text-sm rounded-full flex items-center gap-2 border border-cyan-400/30"
       >
-        <span className="truncate max-w-xs">{file.name}</span>
+        <span className="truncate max-w-xs">{file.name || file.url}</span>
         <button
           type="button"
           onClick={() => onRemove(index)}
           className="w-5 h-5 ml-1 bg-red-600 rounded-full text-xs font-bold flex items-center justify-center hover:bg-red-500 transition transform hover:scale-110"
-          aria-label={`Remove ${file.name}`}
+          aria-label={`Remove ${file.name || file.url}`}
         >
           &times;
         </button>
@@ -58,7 +58,8 @@ export default function TeacherPost() {
     audience: "All Students",
     tags: "",
   });
-  const [media, setMedia] = useState([]);
+  const [media, setMedia] = useState([]); // Local selected files
+  const [uploadedMedia, setUploadedMedia] = useState([]); // URLs from Cloudinary
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -87,30 +88,37 @@ export default function TeacherPost() {
     setIsSuccess(false);
     setLoading(true);
 
-    const data = new FormData();
-    data.append("title", formData.title);
-    data.append("content", formData.content);
-    data.append("type", formData.type);
-    data.append("audience", formData.audience);
-    formData.tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter((t) => t)
-      .forEach((tag) => data.append("tags", tag));
-    media.forEach((file) => data.append("media", file));
-
     try {
+      const data = new FormData();
+      data.append("title", formData.title);
+      data.append("content", formData.content);
+      data.append("type", formData.type);
+      data.append("audience", formData.audience);
+
+      formData.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => t)
+        .forEach((tag) => data.append("tags", tag));
+
+      media.forEach((file) => data.append("media", file));
+
       const res = await fetch("http://localhost:5001/api/v1/post", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("authToken")}`,
         },
-        body: data,
+        body: data, // ✅ FormData automatically sets correct content-type
       });
+
       const result = await res.json();
+
       if (!res.ok || !result.success)
         throw new Error(result.message || "Failed to create post.");
+
+      setUploadedMedia(result.post.media); // Store Cloudinary URLs
       setIsSuccess(true);
+      setMedia([]); // Clear local files
     } catch (err) {
       console.error("Post Creation Error:", err);
       setError(err.message || "An unexpected error occurred.");
@@ -139,7 +147,6 @@ export default function TeacherPost() {
 
       <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
         <div className="w-full max-w-3xl bg-neutral-900 p-8 sm:p-12 rounded-3xl shadow-2xl border border-neutral-800 animate-slide-in-down">
-          {/* Header */}
           <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2">
             New Post
           </h1>
@@ -147,7 +154,6 @@ export default function TeacherPost() {
             Share announcements, resources, or activities instantly.
           </p>
 
-          {/* Error */}
           {error && (
             <div className="bg-red-900/50 border border-red-500 text-red-300 px-4 py-3 rounded-xl mb-6">
               <strong>Error:</strong> {error}
@@ -187,7 +193,7 @@ export default function TeacherPost() {
               />
             </div>
 
-            {/* Grid Inputs */}
+            {/* Post type, audience, tags */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-neutral-300 mb-2">
@@ -301,6 +307,39 @@ export default function TeacherPost() {
               )}
             </button>
           </form>
+
+          {/* Render Uploaded Media */}
+          {uploadedMedia.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-xl font-bold text-white mb-4">Uploaded Media</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {uploadedMedia.map((m, index) =>
+                  m.type === "image" ? (
+                    <img
+                      key={index}
+                      src={m.url}
+                      alt="post media"
+                      className="w-full h-64 object-cover rounded-xl"
+                    />
+                  ) : m.type === "video" ? (
+                    <video key={index} controls className="w-full h-64 rounded-xl">
+                      <source src={m.url} type="video/mp4" />
+                    </video>
+                  ) : (
+                    <a
+                      key={index}
+                      href={m.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-cyan-400 underline"
+                    >
+                      Download File
+                    </a>
+                  )
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
