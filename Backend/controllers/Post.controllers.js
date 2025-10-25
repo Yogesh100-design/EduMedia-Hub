@@ -5,32 +5,27 @@ import path from "path";
 
 export const createPost = async (req, res) => {
   try {
-    // Destructure text fields from req.body
     const { title, content, type, audience } = req.body;
 
     let tags = req.body.tags || [];
+    if (typeof tags === "string") tags = [tags];
+    tags = Array.isArray(tags)
+      ? tags.map((t) => String(t).trim()).filter((t) => t.length > 0)
+      : [];
 
-    if (typeof tags === 'string') {
-      tags = [tags];
-    }
+    // -------------------------------
+    // Map uploaded files (req.files) to database schema
+  const media = req.files?.map((file) => ({
+  url: file.path || file?.path || file?.url, // Cloudinary gives file.path as URL
+  type: file.mimetype.startsWith("image")
+    ? "image"
+    : file.mimetype.startsWith("video")
+    ? "video"
+    : file.mimetype === "application/pdf"
+    ? "pdf"
+    : "file",
+})) || [];
 
-    // Ensure it is an array and clean up the tags (trim whitespace, remove empty ones)
-    tags = Array.isArray(tags) ? tags.map(t => String(t).trim()).filter(t => t.length > 0) : [];
-    // -----------------------------
-
-    // Map uploaded files (from Multer's req.files) to match the database schema
-    const media =
-      req.files?.map((file) => ({
-        // Multer on disk storage provides file.path
-        url: file.path.replace(/\\/g, "/"), // Ensure URL uses forward slashes
-        type: file.mimetype.startsWith("image")
-          ? "image"
-          : file.mimetype.startsWith("video")
-          ? "video"
-          : file.mimetype === "application/pdf"
-          ? "pdf"
-          : "file",
-      })) || [];
 
     const newPost = await Post.create({
       title,
@@ -39,28 +34,24 @@ export const createPost = async (req, res) => {
       audience,
       tags,
       media,
-      author: req.user._id, // Assuming auth middleware set req.user
+      author: req.user._id,
     });
 
-    // 2. Populate the document for the response (e.g., author details)
     const populatedPost = await Post.findById(newPost._id)
       .populate("author", "username email role profileImg")
-      .populate("comments.user", "username"); // Assuming comments are sub-documents/nested
+      .populate("comments.user", "username");
 
-    // 3. Send success response with the fully populated post
     res.status(201).json({
       success: true,
       message: "Post created successfully",
       post: populatedPost,
     });
-
-
   } catch (err) {
     console.error("Error creating post:", err);
-    // Send a 500 status for server errors
     res.status(500).json({ success: false, message: "Server Error", error: err.message });
   }
 };
+
 
 
 

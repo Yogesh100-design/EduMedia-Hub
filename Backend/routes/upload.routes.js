@@ -13,6 +13,7 @@ const router = express.Router();
 router.post("/post", protect, upload.array("media", 5), createPost);
 
 
+
 // Student feed
 router.get("/feed" , protect , getStudentFeed);
 

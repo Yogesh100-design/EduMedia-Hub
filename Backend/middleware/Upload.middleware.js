@@ -1,23 +1,25 @@
 import multer from "multer";
-import path from "path";
-import fs from "fs";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import cloudinary from "../config/cloudinary.js";
 
-// Ensure uploads folder exists
-const uploadFolder = "uploads/";
-if (!fs.existsSync(uploadFolder)) {
-  fs.mkdirSync(uploadFolder, { recursive: true });
-}
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    const folder = "uploads"; // Folder name in Cloudinary
+    let resourceType = "auto"; // auto-detect image/video/pdf/etc.
 
-// Storage config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadFolder),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    // ✅ Remove extension from name to avoid .jpg.jpg
+    const fileNameWithoutExt = file.originalname.replace(/\.[^/.]+$/, "");
+
+    return {
+      folder,
+      resource_type: resourceType,
+      public_id: `${Date.now()}-${fileNameWithoutExt}`,
+    };
   },
 });
 
-// File filter
+// ✅ File filter
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
     "image/jpeg",
@@ -27,13 +29,11 @@ const fileFilter = (req, file, cb) => {
     "application/pdf",
     "text/plain",
   ];
-  // Note: MulterError: Unexpected field occurs BEFORE fileFilter runs, 
-  // so the file type logic is okay, but not the cause of the original error.
   allowedTypes.includes(file.mimetype)
     ? cb(null, true)
     : cb(new Error("Invalid file type!"), false);
 };
 
-// Export multer instance
+// ✅ Export multer instance
 const upload = multer({ storage, fileFilter });
 export default upload;
