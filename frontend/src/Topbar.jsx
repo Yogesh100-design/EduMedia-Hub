@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-const TopBar = () => {
+const topBar = () => {
   const routes = [
     { label: "Interview Questions", path: "/interview-questions" },
     { label: "Placement Guidance", path: "/placement-guidance" },
@@ -40,4 +40,4 @@ const TopBar = () => {
   );
 };
 
-export default TopBar;
+export default topBar;
