@@ -67,7 +67,7 @@ const CareerBlogs = () => {
 
       try {
         const token = typeof localStorage !== 'undefined' ? localStorage.getItem("authToken") : '';
-        const res = await fetch("http://localhost:5001/api/v1/getallblog", {
+        const res = await fetch("https://edumedia-hub.onrender.com/api/v1/getallblog", {
           headers: {
             // Note: The Link component from react-router-dom is assumed to be available
             // but is not fully functional in this single file environment.

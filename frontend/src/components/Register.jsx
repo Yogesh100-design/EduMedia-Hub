@@ -25,7 +25,7 @@ export default function Register() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5001/api/v1/users/registerUser", {
+      const res = await fetch("https://edumedia-hub.onrender.com/api/v1/users/registerUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

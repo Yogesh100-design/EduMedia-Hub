@@ -160,7 +160,7 @@ const CommentSection = ({ postId, comments = [], onAdd }) => {
     onAdd(tempComment);
     setText("");
     try {
-      await fetch(`http://localhost:5001/api/v1/posts/${postId}/comment`, {
+      await fetch(`https://edumedia-hub.onrender.com/api/v1/posts/${postId}/comment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -270,7 +270,7 @@ export default function StudentDashboard() {
 
   const fetchPosts = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/v1/feed`, {
+      const res = await fetch(`https://edumedia-hub.onrender.com/api/v1/feed`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
       });
       const data = await res.json();
@@ -310,7 +310,7 @@ export default function StudentDashboard() {
       )
     );
     try {
-      await fetch(`http://localhost:5001/api/v1/posts/${postId}/like`, {
+      await fetch(`https://edumedia-hub.onrender.com/api/v1/posts/${postId}/like`, {
         method: "POST",
         headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
       });
