@@ -157,7 +157,7 @@ export default function BlogWriter() {
 
     try {
       const token = localStorage.getItem("authToken");
-      const res = await fetch("http://localhost:5001/api/v1/createblog", {
+      const res = await fetch("https://edumedia-hub.onrender.com/api/v1/createblog", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -207,7 +207,7 @@ const AboutPage = () => {
 
 							{/* Text Content */}
 							<div className="text-center md:text-left">
-								<h1 className="text-5xl md:text-7xl font-extrabold  bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400 mb-10">
+								<h1 className="text-5xl md:text-7xl  font-extrabold  bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400 mb-2 h-22">
 									Hey, I'm <span className="italic">Yogesh Chavan</span>
 								</h1>
 								<p className="text-lg md:text-xl max-w-4xl leading-relaxed text-gray-300">
