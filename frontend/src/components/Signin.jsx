@@ -15,7 +15,7 @@ export default function SignIn() {
     setLoading(true);
 
     try {
-      const res = await fetch("https://edumedia-hub.onrender.com/api/v1/users/loginUser", {
+      const res = await fetch("https://edumedia-hub-1-bgw0.onrender.com/api/v1/users/loginUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

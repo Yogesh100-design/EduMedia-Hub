@@ -110,7 +110,7 @@ export default function QandABoard() {
   const [questionText, setQuestionText] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const API_BASE_URL = "https://edumedia-hub.onrender.com/api/qna";
+  const API_BASE_URL = "https://edumedia-hub-1-bgw0.onrender.com/api/qna";
 
   const fetchQuestions = async () => {
     try {
