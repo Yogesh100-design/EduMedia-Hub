@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import topBar from "../Topbar";
+import TopBar from "../Topbar"
 
 const API_BASE_URL = "https://edumedia-hub-1-bgw0.onrender.com";
 
