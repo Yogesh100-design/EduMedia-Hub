@@ -18,7 +18,7 @@ connectDB();
 // ✅ Middleware
 app.use(
   cors({
-    origin: "http://localhost:5173", // React/Vite frontend
+    origin: "http://localhost:5173" || "https://edumedia-hub-1.onrender.com/", // React/Vite frontend
     credentials: true,               // allow cookies & headers
   })
 );
