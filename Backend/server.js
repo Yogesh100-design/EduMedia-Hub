@@ -5,9 +5,8 @@ import path from "path";
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/User.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
-import BlogRoute from "./routes/Blog.routes.js"
+import BlogRoute from "./routes/Blog.routes.js";
 import qnaRoutes from "./routes/qnaRoutes.js";
-
 
 dotenv.config();
 const app = express();
@@ -15,52 +14,54 @@ const app = express();
 // ✅ Connect Database
 connectDB();
 
-// ✅ Middleware
+// ✅ CORS Configuration (Final & Complete)
 app.use(
   cors({
-    origin:"https://studymedia-online.netlify.app/", // React/Vite frontend
-    credentials: true,               // allow cookies & headers
+    origin: [
+      "http://localhost:5173",                 // Local frontend
+      "https://studymedia-online.netlify.app"  // Deployed frontend (correct)
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Parse JSON & urlencoded form data
+// Parse JSON & Form Data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Debugging middleware (optional)
+// Debugging Logs (optional)
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.url}`);
   next();
 });
 
-// ✅ Serve static files (uploads)
+// Serve Static Files (uploads folder)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-// ✅ Routes
+// API Routes
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1", uploadRoutes);
 app.use("/api/v1", BlogRoute);
-
 app.use("/api/qna", qnaRoutes);
 
-
-
-// ✅ Simple test route
+// Test Route
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-// ✅ 404 Handler
+// 404 Handler
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
-// ✅ Global Error Handler
+// Global Error Handler
 app.use((err, req, res, next) => {
   console.error("Global Error:", err.stack);
   res.status(500).json({ success: false, message: "Server Error" });
 });
 
-// ✅ Start server
+// Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
