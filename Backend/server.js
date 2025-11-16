@@ -16,12 +16,7 @@ const app = express();
 connectDB();
 
 // ✅ Middleware
-app.use(
-  cors({
-    origin:"https://studymedia-online.netlify.app/", // React/Vite frontend
-    credentials: true,               // allow cookies & headers
-  })
-);
+app.use(cors());
 
 // Parse JSON & urlencoded form data
 app.use(express.json());
