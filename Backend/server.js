@@ -18,7 +18,7 @@ connectDB();
 // ✅ Middleware
 app.use(
   cors({
-    origin:"https://edumedia-hub-1.onrender.com/", // React/Vite frontend
+    origin:"https://studymedia-online.netlify.app/", // React/Vite frontend
     credentials: true,               // allow cookies & headers
   })
 );
