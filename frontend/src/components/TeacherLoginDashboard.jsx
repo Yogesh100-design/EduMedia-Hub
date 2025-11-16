@@ -103,7 +103,7 @@ export default function TeacherPost() {
 
       media.forEach((file) => data.append("media", file));
 
-      const res = await fetch("https://edumedia-hub.onrender.com/api/v1/post", {
+      const res = await fetch("https://edumedia-hub-1-bgw0.onrender.com/api/v1/post", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("authToken")}`,
