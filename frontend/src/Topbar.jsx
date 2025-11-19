@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
-import "./topbar.css"; 
+import "./topbar.css"; // Add this 
 
 const TopBar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
