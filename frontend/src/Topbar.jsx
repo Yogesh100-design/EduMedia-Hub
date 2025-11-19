@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
-import "./topBar.css"; // Add this import for the custom scrollbar styles
+import "./topbar.css"; 
 
 const TopBar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
