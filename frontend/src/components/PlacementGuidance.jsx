@@ -252,12 +252,7 @@ const PlacementGuide = () => {
 
         {/* CTA */}
         <div className="mt-20 text-center">
-          <button 
-            onClick={handleCtaAction}
-            className="bg-fuchsia-600 text-white px-10 py-5 rounded-xl font-bold text-xl shadow-2xl shadow-fuchsia-500/70 hover:bg-fuchsia-500 transition duration-300 transform hover:scale-[1.04] active:scale-100 uppercase tracking-wider"
-          >
-            Book a Free Counseling Session
-          </button>
+          
           <p className="mt-6 text-sm text-gray-500">
             Click here to connect with a placement expert and map your career path today.
           </p>

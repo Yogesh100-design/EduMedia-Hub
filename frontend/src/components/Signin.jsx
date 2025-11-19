@@ -1,5 +1,8 @@
+// SignIn.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
 
 export default function SignIn() {
   const [form, setForm] = useState({ email: "", password: "", role: "student" });
@@ -15,12 +18,15 @@ export default function SignIn() {
     setLoading(true);
 
     try {
-      const res = await fetch("https://edumedia-hub-1-bgw0.onrender.com/api/v1/users/loginUser", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-        credentials: "include",
-      });
+      const res = await fetch(
+        "https://edumedia-hub-1-bgw0.onrender.com/api/v1/users/loginUser ",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+          credentials: "include",
+        }
+      );
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.message || "Login failed");
@@ -45,8 +51,9 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md bg-neutral-900 rounded-2xl p-8 border border-neutral-800 shadow-2xl shadow-cyan-400/10">
+    <div className="bg-black text-white flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-md bg-neutral-900 rounded-2xl p-8 border border-neutral-800 my-10 mb-28 shadow-2xl shadow-cyan-400/10">
+        
         {/* Header */}
         <div className="mb-6 text-center">
           <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
@@ -57,11 +64,40 @@ export default function SignIn() {
           </p>
         </div>
 
-        {/* Form */}
+        {/* GOOGLE LOGIN BUTTON */}
+        <div className="flex justify-center mb-3">
+          <GoogleLogin
+            onSuccess={(response) => {
+              const user = jwtDecode(response.credential);
+
+              // Save Google user info
+              localStorage.setItem("googleUser", JSON.stringify(user));
+              localStorage.setItem("authToken", response.credential);
+              localStorage.setItem("userRole", "student"); // default role
+
+              navigate("/student");
+            }}
+            onError={() => {
+              alert("Google Login Failed");
+            }}
+          />
+        </div>
+        
+        {/* Note about Google login role */}
+        <p className="text-center text-xs text-neutral-400 mb-4">
+          Note: If you choose "Login with Google", you will be signed in as a student.
+        </p>
+
+        <div className="text-center text-neutral-500 text-sm my-3">— OR —</div>
+
+        {/* Normal Email/Password Login Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
+          
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-1">Email Address</label>
+            <label className="block text-sm font-medium text-neutral-300 mb-1">
+              Email Address
+            </label>
             <input
               name="email"
               type="email"
@@ -76,7 +112,9 @@ export default function SignIn() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-1">Password</label>
+            <label className="block text-sm font-medium text-neutral-300 mb-1">
+              Password
+            </label>
             <div className="relative">
               <input
                 name="password"
@@ -94,26 +132,52 @@ export default function SignIn() {
                 className="absolute inset-y-0 right-0 px-3 flex items-center text-neutral-400 hover:text-cyan-300 transition"
               >
                 {showPass ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" /></svg>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                  </svg>
                 ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268-2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268-2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
                 )}
               </button>
             </div>
           </div>
 
-          {/* Role */}
+          {/* Role Selection */}
           <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-1">Role</label>
-            <select
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-              className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-4 py-2 text-white focus:ring-2 focus:ring-cyan-400 outline-none transition"
-            >
-              <option value="student">Student</option>
-              <option value="teacher">Teacher</option>
-            </select>
+            <label className="block text-sm font-medium text-neutral-300 mb-3">
+              I am a...
+            </label>
+            <div className="flex gap-2 bg-neutral-800 rounded-xl border border-neutral-700 p-1">
+              
+              {/* Student */}
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, role: "student" })}
+                className={`flex-1 flex items-center justify-center gap-3 py-3 px-5 rounded-lg transition-all ${
+                  form.role === "student"
+                    ? "bg-gradient-to-r from-cyan-500 to-purple-500 text-black shadow-md"
+                    : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700/50"
+                }`}
+              >
+                <span className="text-base">Student</span>
+              </button>
+
+              {/* Teacher */}
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, role: "teacher" })}
+                className={`flex-1 flex items-center justify-center gap-3 py-3 px-5 rounded-lg transition-all ${
+                  form.role === "teacher"
+                    ? "bg-gradient-to-r from-cyan-500 to-purple-500 text-black shadow-md"
+                    : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700/50"
+                }`}
+              >
+                <span className="text-base">Teacher</span>
+              </button>
+            </div>
           </div>
 
           {/* Submit */}
@@ -122,14 +186,7 @@ export default function SignIn() {
             disabled={loading}
             className="w-full flex justify-center items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-black py-2.5 font-semibold hover:scale-[1.02] transition disabled:opacity-60"
           >
-            {loading ? (
-              <svg className="animate-spin h-5 w-5 text-black" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-            ) : (
-              "Sign in"
-            )}
+            {loading ? "Loading..." : "Sign in"}
           </button>
         </form>
 
@@ -140,6 +197,7 @@ export default function SignIn() {
             Sign up
           </a>
         </p>
+
       </div>
     </div>
   );
