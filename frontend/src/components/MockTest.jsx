@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef , useMemo } from "react";
+// MockTestSoftSkills.jsx
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { BsClock, BsDownload } from "react-icons/bs";
 import { Radar } from "react-chartjs-2";
 import jsPDF from "jspdf";
@@ -12,7 +13,6 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
