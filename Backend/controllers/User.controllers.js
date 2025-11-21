@@ -112,10 +112,11 @@ export const loginUser = asyncHandler(async (req, res) => {
 export const logoutUser = asyncHandler(async (req, res) => {
   // Clear refresh token cookie
   res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+});
+
 
   return res.status(200).json(
     new ApiResponse(200, "👋 You have been logged out successfully. See you soon!")
