@@ -19,7 +19,7 @@ export default function SignIn() {
 
     try {
       const res = await fetch(
-        "https://edumedia-hub-1-bgw0.onrender.com/api/v1/users/loginUser ",
+        "https://edumedia-hub-1-bgw0.onrender.com/api/v1/users/loginUser  ",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -38,6 +38,7 @@ export default function SignIn() {
 
       localStorage.setItem("authToken", token);
       localStorage.setItem("userRole", role);
+      window.dispatchEvent(new Event("authStatusChange"));
 
       if (role === "student") navigate("/student");
       else if (role === "teacher") navigate("/teacher");
@@ -74,6 +75,7 @@ export default function SignIn() {
               localStorage.setItem("googleUser", JSON.stringify(user));
               localStorage.setItem("authToken", response.credential);
               localStorage.setItem("userRole", "student"); // default role
+              window.dispatchEvent(new Event("authStatusChange"));
 
               navigate("/student");
             }}

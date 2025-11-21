@@ -84,7 +84,7 @@ export default function EduMediaLandingPro() {
         <div className="absolute -bottom-40 -right-40 w-[28rem] h-[28rem] bg-gradient-to-tr from-purple-500/20 to-indigo-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
 
         {/* Hero Section */}
-        <main className="relative z-10 flex flex-col items-center justify-center px-6 pt-18 pb-20 text-center">
+        <main className="relative z-10 flex flex-col items-center justify-center px-6 pt-18 pb-20 text-center md:mb-20 md:mt-20">
           <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight">
             Learn & Teach{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
