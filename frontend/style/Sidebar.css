@@ -1,0 +1,31 @@
+/* Hide scrollbar for navigation */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth transitions */
+.sidebar-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Active route indicator */
+.active-route {
+  position: relative;
+}
+
+.active-route::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 70%;
+  background: linear-gradient(to bottom, #06b6d4, #8b5cf6);
+  border-radius: 0 4px 4px 0;
+}

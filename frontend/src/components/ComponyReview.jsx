@@ -277,12 +277,6 @@ const CompanyReview = () => {
                         >
                             <BsPlus /> {showForm ? "Hide Form" : "Add Review"}
                         </button>
-                        <button
-                            onClick={downloadPDF}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold border border-slate-700 transition"
-                        >
-                            <BsDownload /> Export PDF
-                        </button>
                     </div>
                 </div>
 

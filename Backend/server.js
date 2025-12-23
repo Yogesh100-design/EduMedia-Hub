@@ -18,7 +18,7 @@ connectDB();
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",                 // Local frontend
+      "http://localhost:5173",                 
       "https://edumedia-hub-2.onrender.com"  
     ],
     credentials: true,
