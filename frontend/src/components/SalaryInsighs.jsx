@@ -283,13 +283,6 @@ const SalaryInsights = () => {
             </h2>
             <p className="text-slate-400 mt-1">Compare earning potential across roles, industries, and experience levels.</p>
           </div>
-          <button 
-            onClick={downloadPDF} 
-            className="flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-emerald-600 to-green-700 text-white font-bold shadow-lg shadow-emerald-600/30 hover:scale-[1.02] active:scale-[0.98] transition-transform"
-            title="Download full report as PDF"
-          >
-            <Download className="w-5 h-5" /> Download Report
-          </button>
         </div>
 
 
@@ -429,15 +422,7 @@ const SalaryInsights = () => {
         </div>
 
         {/* Footer CTA */}
-        <div className="mt-16 text-center">
-          <p className="text-slate-400 mb-4 text-lg">Help us refine these insights by securely contributing your compensation data.</p>
-          <a
-            href="/contribute-salary"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-extrabold text-lg shadow-2xl shadow-emerald-700/50 hover:scale-[1.05] transition-all duration-300"
-          >
-            <DollarSign className="w-6 h-6" /> Securely Contribute Data
-          </a>
-        </div>
+        
       </div>
     </div>
   );
