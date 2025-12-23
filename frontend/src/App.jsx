@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import './App.css'
 import EduMediaLandingPro from './components/EduMediaLanding'
 import Header from './components/Header'
@@ -27,8 +26,6 @@ import QandABoard from './components/Quetions'
 
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
       <Header />
