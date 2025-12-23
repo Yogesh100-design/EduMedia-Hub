@@ -1,16 +1,20 @@
-import React, { useReducer, useRef, useCallback, useState } from "react";
+import React, { useReducer, useRef, useState, useEffect, useCallback, useMemo } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
-// Lucide Icons (inlining for single-file stability)
+// --- Icons ---
 const Download = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>);
 const Trash = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>);
 const Plus = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>);
 const Minus = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" x2="19" y1="12" y2="12"/></svg>);
-const AlertTriangle = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.87 18a2 2 0 0 0 1.76 3H20.37a2 2 0 0 0 1.76-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>);
 const Upload = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="15" y2="3"/></svg>);
-const Award = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 18 17 23 15.79 13.88"/></svg>);
+const Grip = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9 5h2v2H9zm0 4h2v2H9zm0 4h2v2H9zm4-8h2v2h-2zm0 4h2v2h-2zm0 4h2v2h-2z"/></svg>);
+const Check = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>);
+const AlertCircle = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>);
+const Image = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>);
+const Code = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>);
 
-
-// --- Default Data Structure and Initial State ---
+// --- Initial Data ---
 const initialResumeData = {
     personal: {
         name: 'ELARA VANCE',
@@ -18,747 +22,994 @@ const initialResumeData = {
         email: 'elara.vance@innovate.co',
         phone: '(555) 987-6543',
         linkedin: 'linkedin.com/in/elaravance',
-        github: 'github.com/elaradev'
+        github: 'github.com/elaradev',
+        website: 'elaravance.dev',
+        location: 'Austin, TX',
+        photo: null,
     },
-    summary: 'Seasoned and results-driven Product Leader with 8+ years of experience steering cross-functional teams to deliver high-impact SaaS solutions. Expertise in full product lifecycle management, technical architecture, and market strategy. Recognized for driving a $10M ARR increase by launching a key API integration platform.',
-    skills: 'Product Strategy, Agile (Scrum/Kanban), Technical Architecture, SQL, Python, JIRA, Figma, Cloud (AWS/Azure), User Research, GTM Strategy',
+    summary: 'Seasoned and results-driven Product Leader with 8+ years of experience steering cross-functional teams to deliver high-impact SaaS solutions that have generated over $50M in revenue. Expertise in product strategy, agile methodologies, and technical leadership.',
+    skills: ['Product Strategy', 'Agile (Scrum/Kanban)', 'SQL', 'Python', 'JIRA', 'Figma', 'React', 'Node.js', 'Data Analytics', 'Team Leadership'],
     experience: [
-        {
-            id: 1,
-            title: 'Senior Product Manager',
-            company: 'NexusTech Solutions',
-            location: 'Austin, TX',
-            startDate: 'Jan 2021',
-            endDate: 'Present',
-            description: [
-                'Managed product roadmap for a core data platform serving 500k+ users, leading to a 25% increase in weekly active usage.',
-                'Collaborated with engineering to define technical specs, resulting in a 40% reduction in platform latency through optimization of database queries.',
-                'Oversaw a team of 5 engineers and 2 designers, implementing OKR framework that improved team delivery predictability by 35%.'
-            ]
-        }
+        { id: 1, title: 'Senior Product Manager', company: 'NexusTech Solutions', location: 'Austin, TX', startDate: 'Jan 2021', endDate: 'Present', description: ['Led product strategy for a B2B SaaS platform serving 500k+ users, resulting in 40% YoY revenue growth', 'Managed a cross-functional team of 12 engineers, designers, and analysts using Agile methodology', 'Defined and executed product roadmap that reduced churn by 25% and increased NPS from 32 to 68'] },
+        { id: 2, title: 'Product Manager', company: 'CloudFlow Inc', location: 'San Francisco, CA', startDate: 'Mar 2018', endDate: 'Dec 2020', description: ['Launched 3 major product features that increased user engagement by 60%', 'Conducted user research with 200+ customers to identify pain points and opportunities', 'Collaborated with engineering to reduce technical debt by 30% while maintaining feature velocity'] }
     ],
     projects: [
-        {
-            id: 1,
-            title: 'AI-Powered Resume Grader',
-            link: 'github.com/resumegrader',
-            year: '2023',
-            description: [
-                'Developed a Python/TensorFlow model to score resumes against job descriptions, achieving 92% accuracy.',
-                'Built a simple React frontend for data visualization and user interaction.'
-            ]
-        }
+        { id: 1, title: 'AI-Powered Resume Grader', link: 'github.com/elaradev/resume-grader', year: '2023', description: ['Built full-stack React/Node.js application that provides real-time resume feedback using NLP', 'Implemented PDF parsing and analysis engine processing 1000+ documents daily', 'Achieved 95% accuracy in skill extraction and ATS compatibility scoring'] },
+        { id: 2, title: 'Product Analytics Dashboard', link: 'github.com/elaradev/analytics-dash', year: '2022', description: ['Developed real-time analytics dashboard using D3.js and WebSockets', 'Reduced reporting time from 4 hours to 15 minutes for executive team', 'Implemented predictive analytics features that improved forecasting accuracy by 35%'] }
     ],
     education: [
-        {
-            id: 1,
-            degree: 'M.B.A., Technology Management',
-            institution: 'University of Texas at Austin',
-            year: '2019',
-            details: 'Dean\'s List | Thesis on AI Ethics in Business.'
-        }
+        { id: 1, degree: 'Master of Business Administration (MBA)', institution: 'University of Texas at Austin', location: 'Austin, TX', year: '2019', details: 'Concentration: Technology Commercialization & AI Ethics. GPA: 3.8/4.0' },
+        { id: 2, degree: 'Bachelor of Science in Computer Science', institution: 'Georgia Tech', location: 'Atlanta, GA', year: '2015', details: 'Minor: Cognitive Psychology. Dean\'s List (4 years), Summa Cum Laude' }
     ],
     certifications: [
-        {
-            id: 1,
-            name: 'Certified ScrumMaster (CSM)',
-            issuer: 'Scrum Alliance',
-            year: '2022',
-            details: 'Focused on Agile methodologies and team collaboration.'
-        }
-    ]
-};
-
-// --- Reducer for state management ---
-const reducer = (state, action) => {
-    switch (action.type) {
-        case 'LOAD_STATE':
-            // Overwrites the entire state with new data
-            return action.payload;
-
-        case 'UPDATE_FIELD':
-            // Handles updates for personal, summary, and skills (flat fields)
-            return {
-                ...state,
-                [action.section]: action.field ? {
-                    ...state[action.section],
-                    [action.field]: action.value
-                } : action.value
-            };
-        
-        case 'ADD_ITEM':
-            // Adds a new item to a repeatable section
-            return {
-                ...state,
-                [action.section]: [
-                    ...state[action.section],
-                    { id: Date.now(), ...action.payload }
-                ]
-            };
-        
-        case 'UPDATE_ITEM':
-            // Updates fields within an item (title, company, year, etc.)
-            return {
-                ...state,
-                [action.section]: state[action.section].map(item =>
-                    item.id === action.id ? { ...item, ...action.payload } : item
-                )
-            };
-        
-        case 'REMOVE_ITEM':
-            return {
-                ...state,
-                [action.section]: state[action.section].filter(item => item.id !== action.id)
-            };
-        
-        case 'UPDATE_BULLET_POINT':
-            // Updates a specific achievement/bullet point
-            return {
-                ...state,
-                [action.section]: state[action.section].map(item => {
-                    if (item.id === action.id && item.description) {
-                        const newDescription = [...item.description];
-                        newDescription[action.index] = action.value;
-                        return { ...item, description: newDescription };
-                    }
-                    return item;
-                })
-            };
-
-        case 'ADD_BULLET_POINT':
-            // Adds a new bullet point
-            return {
-                ...state,
-                [action.section]: state[action.section].map(item => {
-                    if (item.id === action.id && item.description) {
-                        const newBullet = action.section === 'experience' 
-                            ? 'Quantified achievement or key result.' 
-                            : 'New responsibility or detail.';
-                        return { ...item, description: [...item.description, newBullet] };
-                    }
-                    return item;
-                })
-            };
-
-        case 'REMOVE_BULLET_POINT':
-            // Removes a bullet point
-            return {
-                ...state,
-                [action.section]: state[action.section].map(item => {
-                    if (item.id === action.id && item.description) {
-                        return { ...item, description: item.description.filter((_, i) => i !== action.index) };
-                    }
-                    return item;
-                })
-            };
-        default:
-            return state;
+        { id: 1, name: 'Certified ScrumMaster (CSM)', issuer: 'Scrum Alliance', year: '2022', details: 'Advanced agile methodologies and team facilitation' },
+        { id: 2, name: 'AWS Certified Solutions Architect', issuer: 'Amazon Web Services', year: '2021', details: 'Cloud architecture and distributed systems design' }
+    ],
+    settings: {
+        template: 'modern',
+        primaryColor: '#1f2937',
+        fontSize: 'text-sm',
+        showPhoto: false,
+        showProjects: true,
+        showCertifications: true,
+        showSummary: true,
+        showSkills: true,
     }
 };
 
+// --- Reducer ---
+const reducer = (state, action) => {
+    switch (action.type) {
+        case 'LOAD_STATE': return action.payload;
+        case 'UPDATE_FIELD':
+            return {
+                ...state,
+                [action.section]: action.field ? { ...state[action.section], [action.field]: action.value } : action.value
+            };
+        case 'ADD_ITEM':
+            return { ...state, [action.section]: [...state[action.section], { id: Date.now(), ...action.payload }] };
+        case 'UPDATE_ITEM':
+            return { ...state, [action.section]: state[action.section].map(item => item.id === action.id ? { ...item, ...action.payload } : item) };
+        case 'REMOVE_ITEM':
+            return { ...state, [action.section]: state[action.section].filter(item => item.id !== action.id) };
+        case 'MOVE_ITEM':
+            const items = [...state[action.section]];
+            const [movedItem] = items.splice(action.fromIndex, 1);
+            items.splice(action.toIndex, 0, movedItem);
+            return { ...state, [action.section]: items };
+        case 'UPDATE_BULLET_POINT':
+            return { ...state, [action.section]: state[action.section].map(item => {
+                if (item.id === action.id) {
+                    const newDesc = [...item.description];
+                    newDesc[action.index] = action.value;
+                    return { ...item, description: newDesc };
+                }
+                return item;
+            })};
+        case 'ADD_BULLET_POINT':
+            return { ...state, [action.section]: state[action.section].map(item => item.id === action.id ? { ...item, description: [...item.description, ''] } : item) };
+        case 'REMOVE_BULLET_POINT':
+            return { ...state, [action.section]: state[action.section].map(item => item.id === action.id ? { ...item, description: item.description.filter((_, i) => i !== action.index) } : item) };
+        case 'ADD_SKILL':
+            return { ...state, skills: [...state.skills, action.payload] };
+        case 'REMOVE_SKILL':
+            return { ...state, skills: state.skills.filter((_, i) => i !== action.index) };
+        case 'UPDATE_SKILL':
+            const newSkills = [...state.skills];
+            newSkills[action.index] = action.payload;
+            return { ...state, skills: newSkills };
+        case 'UPDATE_SETTINGS':
+            return { ...state, settings: { ...state.settings, ...action.payload } };
+        default: return state;
+    }
+};
 
-// --- Utility Components for the Resume Preview ---
+// --- Utility Functions ---
+const calculateResumeScore = (data) => {
+    let score = 0;
+    if (data.personal.name.length > 3) score += 10;
+    if (data.personal.email.length > 5) score += 10;
+    if (data.summary.length > 50) score += 15;
+    if (data.skills.length >= 5) score += 15;
+    if (data.experience.length > 0) score += 20;
+    if (data.education.length > 0) score += 10;
+    if (data.experience.some(exp => exp.description.length >= 2)) score += 10;
+    if (data.personal.photo) score += 5;
+    if (data.projects.length > 0) score += 5;
+    return Math.min(score, 100);
+};
 
-const Header = ({ personal }) => (
-    <div className="text-center pb-3 mb-3 border-b border-gray-300">
-        <h1 className="text-3xl font-extrabold tracking-wider text-gray-900 uppercase">{personal.name}</h1>
-        <p className="text-lg font-medium text-gray-700 mb-2">{personal.title}</p>
-        <div className="flex justify-center flex-wrap gap-x-4 text-sm text-gray-600 font-mono">
-            {personal.phone && <span>{personal.phone}</span>}
-            {personal.email && <span>| {personal.email}</span>}
-            {personal.linkedin && <a href={`https://${personal.linkedin}`} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600">| {personal.linkedin}</a>}
-            {personal.github && <a href={`https://${personal.github}`} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600">| {personal.github}</a>}
+// --- Preview Component Templates ---
+const ModernHeader = ({ personal, settings }) => (
+    <div className={`pb-6 mb-6 border-b-2 ${settings.primaryColor === '#1f2937' ? 'border-gray-800' : 'border-blue-600'}`}>
+        <div className="flex items-start gap-6">
+            {settings.showPhoto && personal.photo && (
+                <img src={personal.photo} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-gray-200" />
+            )}
+            <div className="flex-1">
+                <h1 className={`font-extrabold text-3xl mb-1 ${settings.primaryColor === '#1f2937' ? 'text-gray-900' : 'text-blue-900'}`}>{personal.name}</h1>
+                <p className="text-xl text-gray-700 mb-2">{personal.title}</p>
+                <div className="text-sm text-gray-600 flex flex-wrap gap-4">
+                    <span>{personal.phone}</span>
+                    <span>•</span>
+                    <span>{personal.email}</span>
+                    {personal.website && <><span>•</span><span>{personal.website}</span></>}
+                    {personal.linkedin && <><span>•</span><span>{personal.linkedin}</span></>}
+                    {personal.github && <><span>•</span><span>{personal.github}</span></>}
+                </div>
+            </div>
         </div>
     </div>
 );
 
-const Section = ({ title, children }) => (
-    <div className="mb-4">
-        <h2 className="text-base font-bold border-b-2 border-gray-800 pb-1 mb-2 uppercase text-gray-800 tracking-widest">{title}</h2>
+const ClassicHeader = ({ personal, settings }) => (
+    <div className="text-center pb-5 mb-5 border-b-2 border-gray-800">
+        <h1 className="text-3xl font-bold text-gray-900 mb-1">{personal.name}</h1>
+        <p className="text-lg text-gray-700 mb-3">{personal.title}</p>
+        <div className="text-sm text-gray-600 flex justify-center flex-wrap gap-3">
+            <span>{personal.phone}</span>
+            <span>|</span>
+            <span>{personal.email}</span>
+            <span>|</span>
+            <span>{personal.location}</span>
+        </div>
+        {(personal.website || personal.linkedin) && (
+            <div className="text-sm text-gray-600 mt-1">
+                {personal.website && <span>{personal.website}</span>}
+                {personal.website && personal.linkedin && <span> | </span>}
+                {personal.linkedin && <span>{personal.linkedin}</span>}
+            </div>
+        )}
+    </div>
+);
+
+const MinimalistHeader = ({ personal, settings }) => (
+    <div className="pb-4 mb-4 border-b border-gray-400">
+        <h1 className="text-2xl font-light tracking-wide text-gray-900">{personal.name}</h1>
+        <p className="text-sm text-gray-600 mt-1">{personal.title}</p>
+        <div className="text-xs text-gray-500 mt-2 flex flex-wrap gap-2">
+            <span>{personal.email}</span>
+            <span>•</span>
+            <span>{personal.phone}</span>
+        </div>
+    </div>
+);
+
+const Section = ({ title, children, settings }) => (
+    <div className="mb-6">
+        <h2 className={`text-sm font-bold border-b-2 ${settings.primaryColor === '#1f2937' ? 'border-gray-800' : 'border-blue-600'} pb-2 mb-3 uppercase tracking-widest ${settings.primaryColor === '#1f2937' ? 'text-gray-900' : 'text-blue-900'}`}>
+            {title}
+        </h2>
         {children}
     </div>
 );
 
-const DetailEntry = ({ item, isCert = false }) => (
-    <div className="mb-3">
-        <div className="flex justify-between items-start">
-            <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-gray-900 leading-tight">{item.title || item.degree || item.name}</h3>
-                <p className="text-xs font-medium text-gray-700 leading-tight">
-                    {item.company ? `${item.company} | ${item.location}` : ''}
-                    {item.institution ? item.institution : ''}
-                    {item.issuer ? item.issuer : ''}
-                    {item.link && <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline block truncate">{item.link}</a>}
-                </p>
+const ModernDetailEntry = ({ item }) => (
+    <div className="mb-5 text-left">
+        <div className="flex justify-between items-start mb-1">
+            <div>
+                <span className="font-bold text-base">{item.title || item.degree || item.name}</span>
+                <span className="text-gray-700 ml-2">— {item.company || item.institution || item.issuer}</span>
             </div>
-            <span className="text-xs text-gray-600 font-medium whitespace-nowrap ml-4 pt-1">
-                {item.year ? item.year : (item.startDate && item.endDate ? `${item.startDate} – ${item.endDate}` : '')}
-            </span>
+            <span className="text-sm text-gray-600 italic">{item.year || `${item.startDate} - ${item.endDate}`}</span>
         </div>
-        
-        {item.details && <p className="text-xs italic text-gray-500 mt-1">{item.details}</p>}
-
-        {item.description && item.description.length > 0 && (
-            <ul className="list-disc ml-5 text-gray-700 text-sm mt-1 space-y-0.5">
-                {item.description.map((point, index) => (
-                    <li key={index} className="pl-1 leading-snug">{point}</li>
-                ))}
+        {item.location && <div className="text-sm text-gray-600 mb-2">{item.location}</div>}
+        {item.link && <div className="text-xs text-blue-600 mb-1">{item.link}</div>}
+        {item.details && <div className="text-xs text-gray-600 mb-1 italic">{item.details}</div>}
+        {item.description && (
+            <ul className="list-disc ml-5 text-sm mt-1 space-y-1">
+                {item.description.map((pt, i) => pt && <li key={i}>{pt}</li>)}
             </ul>
         )}
     </div>
 );
 
-// --- Main Resume Preview Component ---
+const ClassicDetailEntry = ({ item }) => (
+    <div className="mb-4 text-left">
+        <div className="flex justify-between font-bold text-sm">
+            <span>{item.title || item.degree || item.name}</span>
+            <span>{item.year || `${item.startDate} - ${item.endDate}`}</span>
+        </div>
+        <div className="text-xs italic mb-1">
+            {item.company || item.institution || item.issuer}
+            {item.location && <span>, {item.location}</span>}
+        </div>
+        {item.link && <div className="text-xs text-blue-600 mb-1">{item.link}</div>}
+        {item.details && <div className="text-xs text-gray-600 mb-1 italic">{item.details}</div>}
+        {item.description && (
+            <ul className="list-disc ml-4 text-xs mt-1">
+                {item.description.map((pt, i) => pt && <li key={i}>{pt}</li>)}
+            </ul>
+        )}
+    </div>
+);
+
+const MinimalistDetailEntry = ({ item }) => (
+    <div className="mb-4 text-left">
+        <div className="flex justify-between text-sm">
+            <span className="font-medium">{item.title || item.degree || item.name}</span>
+            <span className="text-gray-600">{item.year || `${item.startDate} - ${item.endDate}`}</span>
+        </div>
+        <div className="text-xs text-gray-600">
+            {item.company || item.institution || item.issuer}
+        </div>
+        {item.description && (
+            <ul className="list-none ml-0 text-xs mt-1 space-y-1">
+                {item.description.map((pt, i) => pt && <li key={i}>— {pt}</li>)}
+            </ul>
+        )}
+    </div>
+);
 
 const ResumePreview = React.forwardRef(({ data }, ref) => {
+    const { settings } = data;
+    const fontSize = settings.fontSize || 'text-sm';
+    
+    const HeaderComponent = {
+        modern: ModernHeader,
+        classic: ClassicHeader,
+        minimalist: MinimalistHeader,
+    }[settings.template] || ModernHeader;
+    
+    const DetailComponent = {
+        modern: ModernDetailEntry,
+        classic: ClassicDetailEntry,
+        minimalist: MinimalistDetailEntry,
+    }[settings.template] || ModernDetailEntry;
+
     return (
-        <div ref={ref} className="bg-white p-8 shadow-xl h-[297mm] w-[210mm] mx-auto text-inter print-area text-black">
-            <Header personal={data.personal} />
-
-            {/* Summary */}
-            {data.summary && (
-                <Section title="Professional Summary">
-                    <p className="text-sm text-gray-700 leading-relaxed">{data.summary}</p>
-                </Section>
-            )}
-
-            {/* Skills */}
-            {data.skills && (
-                <Section title="Technical Skills">
-                    <p className="text-sm text-gray-700 leading-relaxed">{data.skills}</p>
+        <div 
+            ref={ref} 
+            id="resume-content" 
+            className={`bg-white p-10 shadow-2xl w-[210mm] min-h-[297mm] mx-auto text-black ${fontSize} leading-relaxed`}
+        >
+            <HeaderComponent personal={data.personal} settings={settings} />
+            
+            {settings.showSummary && data.summary && (
+                <Section title="Summary" settings={settings}>
+                    <p className="text-sm text-gray-800">{data.summary}</p>
                 </Section>
             )}
             
-            {/* Experience */}
+            {settings.showSkills && data.skills.length > 0 && (
+                <Section title="Skills" settings={settings}>
+                    <div className="flex flex-wrap gap-2">
+                        {data.skills.map((skill, i) => (
+                            <span key={i} className={`px-2 py-1 text-xs rounded ${settings.primaryColor === '#1f2937' ? 'bg-gray-100 text-gray-800' : 'bg-blue-50 text-blue-800'}`}>
+                                {skill}
+                            </span>
+                        ))}
+                    </div>
+                </Section>
+            )}
+            
             {data.experience.length > 0 && (
-                <Section title="Professional Experience">
-                    {data.experience.map(item => (
-                        <DetailEntry key={item.id} item={item} />
-                    ))}
-                </Section>
-            )}
-
-            {/* Projects */}
-            {data.projects.length > 0 && (
-                <Section title="Key Projects">
-                    {data.projects.map(item => (
-                        <DetailEntry key={item.id} item={item} />
-                    ))}
-                </Section>
-            )}
-
-            {/* Education */}
-            {data.education.length > 0 && (
-                <Section title="Education">
-                    {data.education.map(item => (
-                        <DetailEntry key={item.id} item={item} />
-                    ))}
+                <Section title="Experience" settings={settings}>
+                    {data.experience.map(exp => <DetailComponent key={exp.id} item={exp} />)}
                 </Section>
             )}
             
-            {/* Certifications */}
-            {data.certifications.length > 0 && (
-                <Section title="Certifications & Awards">
-                    {data.certifications.map(item => (
-                        <DetailEntry key={item.id} item={item} isCert={true} />
-                    ))}
+            {data.education.length > 0 && (
+                <Section title="Education" settings={settings}>
+                    {data.education.map(edu => <DetailComponent key={edu.id} item={edu} />)}
+                </Section>
+            )}
+            
+            {settings.showProjects && data.projects.length > 0 && (
+                <Section title="Projects" settings={settings}>
+                    {data.projects.map(proj => <DetailComponent key={proj.id} item={proj} />)}
+                </Section>
+            )}
+            
+            {settings.showCertifications && data.certifications.length > 0 && (
+                <Section title="Certifications" settings={settings}>
+                    {data.certifications.map(cert => <DetailComponent key={cert.id} item={cert} />)}
                 </Section>
             )}
         </div>
     );
 });
 
-
-// --- Input Form Components ---
-
-const InputField = ({ label, value, onChange, type = 'text', fullWidth = false }) => (
-    <div className={fullWidth ? "col-span-2" : "col-span-1"}>
-        <label className="block text-xs font-medium text-gray-400 mb-1">{label}</label>
-        <input
+// --- Editor Components ---
+const InputField = ({ label, value, onChange, type = 'text', placeholder }) => (
+    <div>
+        <label className="block text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</label>
+        <input 
             type={type}
-            value={value}
+            className="w-full bg-gray-700 p-3 rounded-lg border border-gray-600 focus:border-blue-500 outline-none transition"
+            value={value || ''} 
             onChange={onChange}
-            className="w-full rounded-md border border-gray-600 bg-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 text-sm transition-colors"
+            placeholder={placeholder}
         />
     </div>
 );
 
-const TextAreaField = ({ label, value, onChange, rows = 3 }) => (
-    <div className="col-span-2">
-        <label className="block text-xs font-medium text-gray-400 mb-1">{label}</label>
-        <textarea
+const TextAreaField = ({ label, value, onChange, rows = 3, placeholder }) => (
+    <div>
+        <label className="block text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</label>
+        <textarea 
             rows={rows}
-            value={value}
+            className="w-full bg-gray-700 p-3 rounded-lg border border-gray-600 focus:border-blue-500 outline-none transition resize-none"
+            value={value || ''} 
             onChange={onChange}
-            className="w-full rounded-md border border-gray-600 bg-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 text-sm transition-colors"
+            placeholder={placeholder}
         />
     </div>
 );
 
-const ArrayItemEditor = ({ config, item, dispatch }) => {
-    const { section, titleField, hasDescriptions } = config;
-
+const SkillTag = ({ skill, index, onUpdate, onRemove }) => {
+    const [editing, setEditing] = useState(false);
+    const [value, setValue] = useState(skill);
+    
+    const handleSave = () => {
+        onUpdate(index, value);
+        setEditing(false);
+    };
+    
     return (
-        <div className="p-4 bg-gray-700 rounded-xl border border-gray-600 mb-4 transition-all duration-300 hover:border-blue-500">
-            <div className="flex justify-between items-center mb-3">
-                <h4 className="text-base font-bold text-blue-300">{item[titleField] || `New ${config.title.split(' ')[0]}`}</h4>
-                <button
-                    onClick={() => dispatch({ type: 'REMOVE_ITEM', section, id: item.id })}
-                    className="text-red-400 hover:text-red-300 transition-colors p-1 rounded-full bg-gray-600 hover:bg-red-900"
-                    title={`Remove ${section.slice(0, -1)}`}
-                >
-                    <Trash className="w-5 h-5"/>
-                </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-                {config.fields.map(field => (
-                    <InputField
-                        key={field.key}
-                        label={field.label}
-                        value={item[field.key] || ''}
-                        onChange={(e) => dispatch({
-                            type: 'UPDATE_ITEM',
-                            section,
-                            id: item.id,
-                            payload: { [field.key]: e.target.value }
-                        })}
-                        fullWidth={field.fullWidth}
+        <div className="flex items-center gap-1 bg-blue-600 px-3 py-1 rounded-full text-sm">
+            {editing ? (
+                <>
+                    <input 
+                        type="text" 
+                        value={value} 
+                        onChange={(e) => setValue(e.target.value)}
+                        className="bg-gray-700 px-2 py-0 rounded focus:outline-none"
+                        autoFocus
                     />
-                ))}
-            </div>
-
-            {hasDescriptions && (
-                <div className="mt-4 pt-4 border-t border-gray-600">
-                    <h5 className="text-sm font-medium text-gray-300 mb-2">Key Achievements (Quantified Bullet Points)</h5>
-                    <div className="space-y-2">
-                        {item.description.map((bullet, index) => (
-                            <div key={index} className="flex items-start space-x-2">
-                                <span className="text-blue-400 text-lg mt-0.5">•</span>
-                                <textarea
-                                    rows={2}
-                                    value={bullet}
-                                    onChange={(e) => dispatch({
-                                        type: 'UPDATE_BULLET_POINT',
-                                        section,
-                                        id: item.id,
-                                        index,
-                                        value: e.target.value
-                                    })}
-                                    className="flex-1 rounded-md border-gray-600 bg-gray-800 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 text-sm resize-y"
-                                />
-                                <button
-                                    onClick={() => dispatch({ type: 'REMOVE_BULLET_POINT', section, id: item.id, index })}
-                                    className="text-red-400 hover:text-red-300 transition-colors mt-2 p-1 rounded-md"
-                                    title="Remove bullet"
-                                >
-                                    <Minus className="w-4 h-4"/>
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                    <button
-                        onClick={() => dispatch({ type: 'ADD_BULLET_POINT', section, id: item.id })}
-                        className="mt-3 flex items-center gap-1 text-sm text-green-400 font-semibold hover:text-green-300 transition-colors"
-                    >
-                        <Plus className="w-4 h-4" /> Add Bullet Point
+                    <button onClick={handleSave} className="text-green-400 hover:text-green-300">
+                        <Check className="w-4 h-4" />
                     </button>
-                </div>
+                </>
+            ) : (
+                <>
+                    <span onClick={() => setEditing(true)} className="cursor-pointer">{skill}</span>
+                    <button onClick={() => onRemove(index)} className="text-gray-300 hover:text-white">
+                        <Minus className="w-3 h-3" />
+                    </button>
+                </>
             )}
         </div>
     );
 };
 
-// --- Main Application Component ---
+const CollapsibleSection = ({ title, children, defaultOpen = true }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+    return (
+        <div className="bg-gray-800 rounded-xl overflow-hidden">
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full px-6 py-4 flex justify-between items-center hover:bg-gray-700 transition"
+            >
+                <span className="font-semibold">{title}</span>
+                <span className={`transform transition ${isOpen ? 'rotate-180' : ''}`}>▼</span>
+            </button>
+            {isOpen && <div className="px-6 py-4 border-t border-gray-700">{children}</div>}
+        </div>
+    );
+};
 
+const DraggableItem = ({ item, index, onMove, children }) => {
+    const [isDragging, setIsDragging] = useState(false);
+    
+    const handleDragStart = (e) => {
+        e.dataTransfer.setData('text/plain', index);
+        setIsDragging(true);
+    };
+    
+    const handleDragOver = (e) => {
+        e.preventDefault();
+    };
+    
+    const handleDrop = (e) => {
+        e.preventDefault();
+        const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+        onMove(fromIndex, index);
+        setIsDragging(false);
+    };
+    
+    return (
+        <div 
+            draggable
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            className={`mb-4 p-4 rounded-lg border-2 ${isDragging ? 'border-blue-500 bg-gray-700' : 'border-gray-600 bg-gray-750'} cursor-move`}
+        >
+            <div className="flex items-center gap-2 mb-2">
+                <Grip className="w-5 h-5 text-gray-400" />
+                <span className="text-xs text-gray-400">Drag to reorder</span>
+            </div>
+            {children}
+        </div>
+    );
+};
+
+// --- Main Application ---
 const ResumeBuilder = () => {
-    // Initializing state with the reducer
     const [data, dispatch] = useReducer(reducer, initialResumeData);
+    const [loading, setLoading] = useState(false);
+    const [toast, setToast] = useState(null);
+    const [importOpen, setImportOpen] = useState(false);
+    const [importData, setImportData] = useState('');
+    const [activeTab, setActiveTab] = useState('personal');
     const previewRef = useRef(null);
     const fileInputRef = useRef(null);
-    const [statusMessage, setStatusMessage] = useState(null);
 
-    // Config for repeatable sections
-    const sectionConfigs = {
-        experience: {
-            section: 'experience',
-            title: 'Work Experience',
-            titleField: 'title',
-            hasDescriptions: true,
-            fields: [
-                { key: 'title', label: 'Job Title', fullWidth: false },
-                { key: 'company', label: 'Company Name', fullWidth: false },
-                { key: 'location', label: 'City, State', fullWidth: false },
-                { key: 'startDate', label: 'Start Date (e.g., Jan 2020)', fullWidth: false },
-                { key: 'endDate', label: 'End Date (e.g., Present or Dec 2023)', fullWidth: false },
-            ],
-            emptyPayload: { title: 'New Role', company: '', location: '', startDate: '', endDate: '', description: ['Quantified result 1.'] }
-        },
-        projects: {
-            section: 'projects',
-            title: 'Key Projects',
-            titleField: 'title',
-            hasDescriptions: true,
-            fields: [
-                { key: 'title', label: 'Project Name', fullWidth: false },
-                { key: 'link', label: 'Link (GitHub/Live Demo)', fullWidth: false },
-                { key: 'year', label: 'Year Completed (e.g., 2024)', fullWidth: false },
-            ],
-            emptyPayload: { title: 'New Project', link: '', year: '', description: ['Description of contribution and technology used.'] }
-        },
-        education: {
-            section: 'education',
-            title: 'Education',
-            titleField: 'degree',
-            hasDescriptions: false,
-            fields: [
-                { key: 'degree', label: 'Degree/Certification', fullWidth: true },
-                { key: 'institution', label: 'Institution/University', fullWidth: true },
-                { key: 'year', label: 'Year/Expected Graduation', fullWidth: false },
-                { key: 'details', label: 'Details (e.g., GPA, Honors)', fullWidth: false },
-            ],
-            emptyPayload: { degree: 'New Degree', institution: '', year: '', details: '' }
-        },
-        certifications: {
-            section: 'certifications',
-            title: 'Certifications & Awards',
-            titleField: 'name',
-            hasDescriptions: false,
-            fields: [
-                { key: 'name', label: 'Certification/Award Name', fullWidth: true },
-                { key: 'issuer', label: 'Issuing Body/Organization', fullWidth: true },
-                { key: 'year', label: 'Year Earned', fullWidth: false },
-                { key: 'details', label: 'Details (e.g., License #)', fullWidth: false },
-            ],
-            emptyPayload: { name: 'New Certification', issuer: '', year: '', details: '' }
-        },
-    };
-    
-    // --- UTILITY FUNCTIONS ---
-    
-    const showStatus = (message) => {
-        setStatusMessage(message);
-        setTimeout(() => setStatusMessage(null), 3000); // Clear message after 3 seconds
-    };
-
-    // --- DOWNLOAD HANDLERS ---
-    
-    const handleDownloadPDF = useCallback(() => {
-        // Use browser print function to save the styled resume as PDF
-        window.print();
-    }, []);
-
-    const generatePlainText = useCallback((resumeData) => {
-        const p = resumeData.personal;
-        let text = `${p.name.toUpperCase()}\n`;
-        text += `${p.title}\n`;
-        text += `${p.phone ? p.phone + ' | ' : ''}${p.email}`;
-        text += `${p.linkedin ? ' | LinkedIn: ' + p.linkedin : ''}${p.github ? ' | GitHub: ' + p.github : ''}\n`;
-        text += '================================================================================\n\n';
-
-        if (resumeData.summary) {
-            text += 'SUMMARY\n';
-            text += '--------------------------------------------------------------------------------\n';
-            text += `${resumeData.summary}\n\n`;
+    // Auto-save to localStorage
+    useEffect(() => {
+        const saved = localStorage.getItem('resumeBuilderData');
+        if (saved) {
+            try {
+                dispatch({ type: 'LOAD_STATE', payload: JSON.parse(saved) });
+                showToast('Previous resume loaded from browser storage', 'success');
+            } catch (e) {
+                console.error('Failed to load saved data', e);
+            }
         }
-
-        ['skills', 'experience', 'projects', 'education', 'certifications'].forEach(sectionKey => {
-            if (sectionKey === 'skills') {
-                if (resumeData.skills) {
-                    text += 'TECHNICAL SKILLS\n';
-                    text += '--------------------------------------------------------------------------------\n';
-                    text += `${resumeData.skills}\n\n`;
-                }
-                return;
-            }
-
-            const sectionData = resumeData[sectionKey];
-            if (sectionData.length > 0) {
-                text += `${sectionConfigs[sectionKey].title.toUpperCase()}\n`;
-                text += '--------------------------------------------------------------------------------\n';
-                sectionData.forEach(item => {
-                    const line1 = `${item.title || item.degree || item.name}${item.company ? ', ' + item.company : item.institution ? ', ' + item.institution : item.issuer ? ', ' + item.issuer : ''}`;
-                    const line2 = `${item.location ? item.location + ' | ' : ''}${item.year ? item.year : (item.startDate && item.endDate ? item.startDate + ' - ' + item.endDate : '')}`;
-                    text += `${line1}\n${line2}\n`;
-                    if (item.details) text += `${item.details}\n`;
-
-                    if (item.description && item.description.length > 0) {
-                        item.description.forEach(bullet => {
-                            text += `• ${bullet}\n`;
-                        });
-                    }
-                    text += '\n';
-                });
-            }
-        });
-        
-        return text;
-    }, [sectionConfigs]);
-
-    const handleDownloadDOCX = useCallback(() => {
-        if (!previewRef.current) return;
-        
-        // Simple client-side HTML to DOCX conversion via Blob/MIME Type
-        // We strip Tailwind classes for Word compatibility and use inline CSS/styles.
-        const content = previewRef.current.innerHTML
-            .replace(/class="[^"]*"/g, '')
-            .replace(/style="[^"]*"/g, '');
-            
-        const htmlContent = `
-            <!DOCTYPE html>
-            <html>
-                <head>
-                    <meta charset="utf-8">
-                    <title>${data.personal.name} Resume</title>
-                    <style>
-                        body { font-family: Calibri, sans-serif; max-width: 8.5in; margin: 1in; color: #333; }
-                        h1 { font-size: 26pt; text-align: center; margin-bottom: 0; padding-bottom: 0; }
-                        .subtitle { font-size: 14pt; text-align: center; margin-bottom: 10pt; }
-                        .contact-info { text-align: center; font-size: 10pt; margin-bottom: 20pt; border-bottom: 1px solid #999; padding-bottom: 5pt; }
-                        h2 { font-size: 14pt; border-bottom: 2px solid #333; padding-bottom: 2px; margin-top: 15pt; text-transform: uppercase; font-weight: bold; }
-                        h3 { font-size: 12pt; font-weight: bold; margin-bottom: 0; }
-                        p, ul, li { font-size: 10.5pt; line-height: 1.4; margin-bottom: 5pt; color: #333; }
-                        ul { list-style-type: disc; margin-left: 20pt; }
-                    </style>
-                </head>
-                <body>
-                    <div class="resume-container">
-                        <div class="header">
-                            <h1 style="font-size: 26pt; margin-bottom: 0;">${data.personal.name.toUpperCase()}</h1>
-                            <p class="subtitle" style="font-size: 14pt;">${data.personal.title}</p>
-                            <div class="contact-info">
-                                ${data.personal.phone ? data.personal.phone + ' | ' : ''}
-                                ${data.personal.email ? data.personal.email + ' | ' : ''}
-                                ${data.personal.linkedin ? `<a href="https://${data.personal.linkedin}">LinkedIn</a>` : ''}
-                                ${data.personal.github ? (data.personal.linkedin ? ' | ' : '') + `<a href="https://${data.personal.github}">GitHub</a>` : ''}
-                            </div>
-                        </div>
-                        ${previewRef.current.querySelector('.print-area').innerHTML.replace(/<div class="text-center pb-4 mb-4 border-b border-gray-300">[\s\S]*?<\/div>/, '')}
-                    </div>
-                </body>
-            </html>
-        `;
-
-        const filename = `${data.personal.name.replace(/\s/g, '_')}_Resume.doc`;
-        const blob = new Blob([htmlContent], {
-            type: 'application/msword;charset=utf-8',
-        });
-
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-
-        URL.revokeObjectURL(a.href);
-        showStatus('DOCX file generated and downloaded!');
-    }, [data.personal]);
-
-
-    const handleDownloadJSON = useCallback(() => {
-        const filename = `${data.personal.name.replace(/\s/g, '_')}_data.json`;
-        const json = JSON.stringify(data, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-        showStatus('JSON data exported successfully!');
+    }, []);
+    
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            localStorage.setItem('resumeBuilderData', JSON.stringify(data));
+        }, 1000);
+        return () => clearTimeout(timer);
     }, [data]);
 
-    // --- IMPORT HANDLER ---
+    // Toast notification
+    const showToast = (message, type = 'info') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
 
-    const handleImportJSON = useCallback((event) => {
-        const file = event.target.files[0];
-        if (!file) return;
+    // File upload handlers
+    const handlePhotoUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'photo', value: e.target.result });
+                showToast('Profile photo uploaded', 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const importedData = JSON.parse(e.target.result);
-                // Simple validation check: must contain 'personal' and 'summary'
-                if (importedData.personal && importedData.summary) {
-                    dispatch({ type: 'LOAD_STATE', payload: importedData });
-                    showStatus('Data loaded successfully!');
-                } else {
-                    showStatus('Invalid JSON structure. Please check the file.');
-                }
-            } catch (error) {
-                console.error('Error parsing JSON:', error);
-                showStatus('Error reading file: Invalid JSON format.');
+    // Import/Export
+    const exportJSON = () => {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${data.personal.name.replace(/\s/g, '_')}_Resume.json`;
+        a.click();
+        showToast('Resume exported as JSON', 'success');
+    };
+
+    const importJSON = () => {
+        try {
+            const parsed = JSON.parse(importData);
+            dispatch({ type: 'LOAD_STATE', payload: parsed });
+            setImportOpen(false);
+            showToast('Resume imported successfully!', 'success');
+        } catch (e) {
+            showToast('Invalid JSON format', 'error');
+        }
+    };
+
+    // Download functions
+    const downloadPDF = async () => {
+        setLoading(true);
+        try {
+            const element = previewRef.current;
+            const canvas = await html2canvas(element, { 
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                logging: false
+            });
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF("p", "mm", "a4");
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            
+            let heightLeft = pdfHeight;
+            let position = 0;
+            
+            pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight);
+            heightLeft -= pdf.internal.pageSize.getHeight();
+            
+            while (heightLeft >= 0) {
+                position = heightLeft - pdfHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight);
+                heightLeft -= pdf.internal.pageSize.getHeight();
             }
-        };
-        reader.onerror = () => {
-            showStatus('Error reading file.');
-        };
-        reader.readAsText(file);
-    }, []);
+            
+            pdf.save(`${data.personal.name.replace(/\s/g, '_')}_Resume.pdf`);
+            showToast('PDF downloaded successfully!', 'success');
+        } catch (error) {
+            showToast('Error generating PDF', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const handleCopyPlainText = useCallback(() => {
-        const plainTextContent = generatePlainText(data);
-        navigator.clipboard.writeText(plainTextContent).then(() => {
-            showStatus('Plain text copied to clipboard!');
-        }).catch(err => {
-            console.error('Could not copy text: ', err);
-            showStatus('Could not copy text.');
-        });
-    }, [data, generatePlainText]);
+    const downloadWord = () => {
+        const content = previewRef.current.innerHTML;
+        const html = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head><meta charset="utf-8"><title>Resume</title></head>
+            <body>${content}</body>
+            </html>
+        `;
+        const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${data.personal.name.replace(/\s/g, '_')}_Resume.doc`;
+        a.click();
+        showToast('Word document downloaded (HTML format)', 'success');
+    };
 
+    // Add item handlers
+    const addItem = (section, payload) => {
+        dispatch({ type: 'ADD_ITEM', section, payload });
+        showToast(`New ${section.slice(0, -1)} added`, 'success');
+    };
+
+    // Score calculation
+    const score = useMemo(() => calculateResumeScore(data), [data]);
 
     return (
-        <div className="min-h-screen bg-gray-900 font-sans p-4 sm:p-8">
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-6">
             <style jsx global>{`
-                /* Print styles: Ensure only the resume preview is printed */
-                @media print {
-                    body > * { display: none !important; }
-                    .print-area { 
-                        display: block !important; 
-                        visibility: visible !important;
-                        position: static !important;
-                        margin: 0 !important;
-                        padding: 20mm 15mm !important;
-                        box-shadow: none !important;
-                        background: white !important;
-                        width: 100%;
-                        max-width: none;
-                        min-height: 100vh;
-                        color: black !important;
-                        font-family: 'Inter', sans-serif !important;
-                    }
-                    .print-area * {
-                        color: inherit !important;
-                        background: transparent !important;
-                        box-shadow: none !important;
-                    }
-                    /* Ensure list styles are visible and black */
-                    .print-area ul { list-style-type: disc !important; color: black !important; }
-                    .print-area li { color: black !important; }
-                    .print-area a { color: #0000FF !important; text-decoration: underline !important; }
+                @media print { 
+                    body { background: white !important; }
+                    .no-print { display: none !important; } 
                 }
+                .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; border-radius: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
             `}</style>
-
-            {/* Status Message Modal */}
-            {statusMessage && (
-                <div className="fixed top-4 right-4 z-50 p-4 rounded-lg shadow-xl bg-blue-600 text-white font-semibold transition-opacity duration-300 animate-fadeInOut">
-                    {statusMessage}
+            
+            {/* Toast Notification */}
+            {toast && (
+                <div className={`fixed top-6 right-6 z-50 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
+                    toast.type === 'success' ? 'bg-green-600' : toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+                }`}>
+                    {toast.type === 'success' ? <Check /> : <AlertCircle />}
+                    <span>{toast.message}</span>
                 </div>
             )}
 
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
-                
-                {/* --- Input Column (Editor) --- */}
-                <div className="lg:order-1 space-y-8 max-h-[95vh] lg:max-h-full overflow-y-auto pr-3 custom-scrollbar print-hidden">
-                    <h1 className="text-4xl font-extrabold text-blue-400 mb-6">Resume Editor Dashboard</h1>
-                    
-                    {/* Download/Export Controls */}
-                    <div className="bg-gray-800 p-4 rounded-xl shadow-2xl border border-gray-700">
-                        <div className="flex flex-wrap gap-3 mb-3">
-                            {/* Download Buttons */}
-                            <button
-                                onClick={handleDownloadPDF}
-                                className="flex-1 min-w-[120px] bg-blue-600 text-white font-extrabold text-sm py-3 rounded-lg hover:bg-blue-700 transition-all shadow-lg transform hover:scale-[1.01] flex items-center justify-center gap-2"
-                            >
-                                <Download className="w-5 h-5"/> Download PDF 
-                            </button>
-                            <button
-                                onClick={handleDownloadDOCX}
-                                className="flex-1 min-w-[120px] bg-cyan-600 text-white font-extrabold text-sm py-3 rounded-lg hover:bg-cyan-700 transition-all shadow-lg flex items-center justify-center gap-2"
-                            >
-                                <Download className="w-5 h-5"/> Download DOCX
-                            </button>
+                {/* Editor Panel */}
+                <div className="no-print space-y-6">
+                    {/* Header */}
+                    <div className="bg-gray-800 rounded-xl p-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                                Resume Builder Pro
+                            </h2>
+                            <div className="text-sm bg-gray-700 px-3 py-1 rounded-full">
+                                Score: <span className={`font-bold ${score >= 80 ? 'text-green-400' : score >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>{score}/100</span>
+                            </div>
                         </div>
+                        
+                        {/* Action Buttons */}
                         <div className="flex flex-wrap gap-3">
-                            {/* Utility Buttons */}
-                             <button
-                                onClick={handleCopyPlainText}
-                                className="flex-1 min-w-[120px] bg-gray-600 text-white font-extrabold text-sm py-3 rounded-lg hover:bg-gray-700 transition-all shadow-md flex items-center justify-center gap-2"
-                            >
-                                Copy TXT
+                            {/* <button onClick={downloadPDF} disabled={loading} className="bg-green-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition disabled:opacity-50">
+                                <Download className="w-5 h-5" /> {loading ? 'Generating...' : 'PDF'}
+                            </button> */}
+                            <button onClick={downloadWord} className="bg-blue-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition">
+                                <Upload className="w-5 h-5 rotate-180" /> Word
                             </button>
-                            <button
-                                onClick={handleDownloadJSON}
-                                className="flex-1 min-w-[120px] bg-gray-600 text-white font-extrabold text-sm py-3 rounded-lg hover:bg-gray-700 transition-all shadow-md flex items-center justify-center gap-2"
-                            >
-                                <Download className="w-5 h-5"/> Export JSON
+                            <button onClick={exportJSON} className="bg-purple-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-purple-700 transition">
+                                <Code className="w-5 h-5" /> Export JSON
                             </button>
-                            
-                            {/* Import Button */}
-                            <button
-                                onClick={() => fileInputRef.current.click()}
-                                className="flex-1 min-w-[120px] bg-green-600 text-white font-extrabold text-sm py-3 rounded-lg hover:bg-green-700 transition-all shadow-md flex items-center justify-center gap-2"
-                            >
-                                <Upload className="w-5 h-5"/> Import JSON
+                            <button onClick={() => setImportOpen(true)} className="bg-yellow-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-yellow-700 transition">
+                                <Upload className="w-5 h-5" /> Import
                             </button>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleImportJSON}
-                                accept=".json"
-                                className="hidden"
+                            <button onClick={() => window.print()} className="bg-gray-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-700 transition">
+                                <Download className="w-5 h-5 rotate-180" /> Print
+                            </button>
+                        </div>
+
+                        {/* Import Modal */}
+                        {importOpen && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 no-print">
+                                <div className="bg-gray-800 p-6 rounded-xl max-w-md w-full mx-4">
+                                    <h3 className="text-xl font-bold mb-4">Import Resume Data</h3>
+                                    <textarea 
+                                        rows="8"
+                                        className="w-full bg-gray-700 p-3 rounded border border-gray-600 text-white"
+                                        placeholder="Paste JSON data here..."
+                                        value={importData}
+                                        onChange={(e) => setImportData(e.target.value)}
+                                    />
+                                    <div className="flex gap-3 mt-4">
+                                        <button onClick={importJSON} className="bg-green-600 px-4 py-2 rounded hover:bg-green-700 transition flex-1">
+                                            Import
+                                        </button>
+                                        <button onClick={() => setImportOpen(false)} className="bg-gray-600 px-4 py-2 rounded hover:bg-gray-700 transition flex-1">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="bg-gray-800 rounded-xl p-2 flex gap-2 overflow-x-auto">
+                        {['personal', 'summary', 'skills', 'experience', 'education', 'projects', 'certifications', 'settings'].map(tab => (
+                            <button 
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-4 py-2 rounded-lg capitalize whitespace-nowrap transition ${
+                                    activeTab === tab ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'
+                                }`}
+                            >
+                                {tab}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Personal Tab */}
+                    {activeTab === 'personal' && (
+                        <CollapsibleSection title="Personal Information">
+                            <div className="space-y-4">
+                                <InputField label="Full Name" value={data.personal.name} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'name', value: e.target.value })} />
+                                <InputField label="Professional Title" value={data.personal.title} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'title', value: e.target.value })} />
+                                <InputField label="Email" type="email" value={data.personal.email} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'email', value: e.target.value })} />
+                                <InputField label="Phone" value={data.personal.phone} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'phone', value: e.target.value })} />
+                                <InputField label="Location" value={data.personal.location} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'location', value: e.target.value })} />
+                                <InputField label="Website" value={data.personal.website} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'website', value: e.target.value })} />
+                                <InputField label="LinkedIn" value={data.personal.linkedin} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'linkedin', value: e.target.value })} />
+                                <InputField label="GitHub" value={data.personal.github} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'github', value: e.target.value })} />
+                                
+                                <div>
+                                    <label className="block text-xs text-gray-400 uppercase tracking-wide mb-2">Profile Photo</label>
+                                    <div className="flex gap-4 items-center">
+                                        {data.personal.photo ? (
+                                            <img src={data.personal.photo} alt="Preview" className="w-24 h-24 rounded-full object-cover" />
+                                        ) : (
+                                            <div className="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center">
+                                                <Image className="w-10 h-10 text-gray-500" />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <input 
+                                                ref={fileInputRef}
+                                                type="file" 
+                                                accept="image/*" 
+                                                onChange={handlePhotoUpload}
+                                                className="hidden"
+                                            />
+                                            <button 
+                                                onClick={() => fileInputRef.current.click()}
+                                                className="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                                            >
+                                                Upload Photo
+                                            </button>
+                                            <p className="text-xs text-gray-400 mt-1">Optional: Adds professional touch</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CollapsibleSection>
+                    )}
+
+                    {/* Summary Tab */}
+                    {activeTab === 'summary' && (
+                        <CollapsibleSection title="Professional Summary">
+                            <TextAreaField 
+                                label="Summary" 
+                                value={data.summary} 
+                                onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'summary', value: e.target.value })}
+                                rows={6}
+                                placeholder="Write a compelling summary of your professional background..."
                             />
-                        </div>
-                        <p className="text-xs text-yellow-400 mt-3 flex items-center gap-1">
-                            <AlertTriangle className="w-4 h-4"/>
-                            Tip: For high-fidelity PDF, use the Chrome/Edge print dialog, set layout to "Portrait", and choose "Save as PDF".
-                        </p>
-                    </div>
+                            <div className="text-xs text-gray-400 mt-2">
+                                Tips: Keep it 3-5 sentences. Focus on achievements and value proposition.
+                            </div>
+                        </CollapsibleSection>
+                    )}
 
-                    {/* Personal Info Section */}
-                    <div className="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">Personal & Contact Details</h2>
-                        <div className="grid grid-cols-2 gap-3">
-                            <InputField label="Full Name" value={data.personal.name} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'name', value: e.target.value })} fullWidth={true}/>
-                            <InputField label="Current Title" value={data.personal.title} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'title', value: e.target.value })} fullWidth={true}/>
-                            <InputField label="Email" value={data.personal.email} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'email', value: e.target.value })} type="email"/>
-                            <InputField label="Phone" value={data.personal.phone} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'phone', value: e.target.value })}/>
-                            <InputField label="LinkedIn URL (without https://)" value={data.personal.linkedin} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'linkedin', value: e.target.value })}/>
-                            <InputField label="GitHub URL (without https://)" value={data.personal.github} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'personal', field: 'github', value: e.target.value })}/>
-                        </div>
-                    </div>
-                    
-                    {/* Summary and Skills Section */}
-                    <div className="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                        <h2 className="text-xl font-bold text-white mb-4">Summary & Skills</h2>
-                        <TextAreaField label="Professional Summary (1-4 lines highly recommended)" value={data.summary} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'summary', value: e.target.value })} rows={4} />
-                        <div className="mt-4">
-                            <TextAreaField label="Technical Skills (Comma Separated for clarity)" value={data.skills} onChange={(e) => dispatch({ type: 'UPDATE_FIELD', section: 'skills', value: e.target.value })} rows={2} />
-                        </div>
-                    </div>
+                    {/* Skills Tab */}
+                    {activeTab === 'skills' && (
+                        <CollapsibleSection title="Skills">
+                            <div className="mb-4">
+                                <label className="block text-xs text-gray-400 uppercase tracking-wide mb-2">Manage Skills</label>
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {data.skills.map((skill, index) => (
+                                        <SkillTag 
+                                            key={index}
+                                            skill={skill}
+                                            index={index}
+                                            onUpdate={(i, val) => dispatch({ type: 'UPDATE_SKILL', index: i, payload: val })}
+                                            onRemove={(i) => dispatch({ type: 'REMOVE_SKILL', index: i })}
+                                        />
+                                    ))}
+                                </div>
+                                <button 
+                                    onClick={() => dispatch({ type: 'ADD_SKILL', payload: 'New Skill' })}
+                                    className="bg-green-600 px-3 py-1 rounded-lg text-sm hover:bg-green-700 transition flex items-center gap-1"
+                                >
+                                    <Plus className="w-4 h-4" /> Add Skill
+                                </button>
+                            </div>
+                        </CollapsibleSection>
+                    )}
 
-                    {/* Dynamic Sections (Experience, Projects, Education, Certifications) */}
-                    {Object.values(sectionConfigs).map(config => (
-                        <div key={config.section} className="bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
-                            <h2 className="text-xl font-bold text-white mb-4">{config.title}</h2>
-                            {data[config.section].map(item => (
-                                <ArrayItemEditor
-                                    key={item.id}
-                                    config={config}
-                                    item={item}
-                                    dispatch={dispatch}
-                                />
-                            ))}
-                            <button
-                                onClick={() => dispatch({ type: 'ADD_ITEM', section: config.section, payload: config.emptyPayload })}
-                                className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-colors mt-2 shadow-md flex items-center justify-center gap-1 transform hover:scale-[1.005]"
-                            >
-                                <Plus className="w-5 h-5"/> Add New {config.title.split(' ')[0]} Entry
-                            </button>
-                        </div>
-                    ))}
-                    
-                    <div className="h-10"></div> {/* Spacer */}
+                    {/* Experience Tab */}
+                    {activeTab === 'experience' && (
+                        <CollapsibleSection title="Work Experience">
+                            <div className="space-y-4">
+                                {data.experience.map((item, index) => (
+                                    <DraggableItem key={item.id} item={item} index={index} onMove={(from, to) => dispatch({ type: 'MOVE_ITEM', section: 'experience', fromIndex: from, toIndex: to })}>
+                                        <InputField label="Job Title" value={item.title} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'experience', id: item.id, payload: { title: e.target.value } })} />
+                                        <InputField label="Company" value={item.company} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'experience', id: item.id, payload: { company: e.target.value } })} />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <InputField label="Location" value={item.location} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'experience', id: item.id, payload: { location: e.target.value } })} />
+                                            <InputField label="Year/Date" value={item.year || `${item.startDate} - ${item.endDate}`} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'experience', id: item.id, payload: { year: e.target.value } })} />
+                                        </div>
+                                        <div className="mt-3">
+                                            <label className="block text-xs text-gray-400 uppercase tracking-wide mb-2">Key Achievements</label>
+                                            {item.description.map((point, i) => (
+                                                <div key={i} className="flex gap-2 mb-2">
+                                                    <textarea 
+                                                        rows="2"
+                                                        className="flex-1 bg-gray-700 p-2 rounded border border-gray-600 focus:border-blue-500 outline-none text-sm"
+                                                        value={point}
+                                                        onChange={(e) => dispatch({ type: 'UPDATE_BULLET_POINT', section: 'experience', id: item.id, index: i, value: e.target.value })}
+                                                        placeholder="Describe a key achievement..."
+                                                    />
+                                                    <button onClick={() => dispatch({ type: 'REMOVE_BULLET_POINT', section: 'experience', id: item.id, index: i })} className="text-red-400 hover:text-red-300">
+                                                        <Trash className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <button onClick={() => dispatch({ type: 'ADD_BULLET_POINT', section: 'experience', id: item.id })} className="text-blue-400 text-sm hover:text-blue-300 flex items-center gap-1">
+                                                <Plus className="w-4 h-4" /> Add Achievement
+                                            </button>
+                                        </div>
+                                        <button onClick={() => dispatch({ type: 'REMOVE_ITEM', section: 'experience', id: item.id })} className="text-red-400 hover:text-red-300 text-sm mt-2 flex items-center gap-1">
+                                            <Trash className="w-4 h-4" /> Remove Position
+                                        </button>
+                                    </DraggableItem>
+                                ))}
+                                <button 
+                                    onClick={() => addItem('experience', { 
+                                        title: 'New Position', 
+                                        company: 'Company Name', 
+                                        location: 'City, State', 
+                                        year: 'Start Date - End Date', 
+                                        description: ['Describe your role and achievements...'] 
+                                    })}
+                                    className="w-full bg-green-600 px-4 py-3 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 font-semibold"
+                                >
+                                    <Plus className="w-5 h-5" /> Add Experience
+                                </button>
+                            </div>
+                        </CollapsibleSection>
+                    )}
+
+                    {/* Education Tab */}
+                    {activeTab === 'education' && (
+                        <CollapsibleSection title="Education">
+                            <div className="space-y-4">
+                                {data.education.map((item, index) => (
+                                    <DraggableItem key={item.id} item={item} index={index} onMove={(from, to) => dispatch({ type: 'MOVE_ITEM', section: 'education', fromIndex: from, toIndex: to })}>
+                                        <InputField label="Degree" value={item.degree} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'education', id: item.id, payload: { degree: e.target.value } })} />
+                                        <InputField label="Institution" value={item.institution} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'education', id: item.id, payload: { institution: e.target.value } })} />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <InputField label="Location" value={item.location} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'education', id: item.id, payload: { location: e.target.value } })} />
+                                            <InputField label="Year" value={item.year} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'education', id: item.id, payload: { year: e.target.value } })} />
+                                        </div>
+                                        <TextAreaField 
+                                            label="Details (GPA, Honors, etc.)" 
+                                            value={item.details}
+                                            onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'education', id: item.id, payload: { details: e.target.value } })}
+                                            rows={2}
+                                        />
+                                        <button onClick={() => dispatch({ type: 'REMOVE_ITEM', section: 'education', id: item.id })} className="text-red-400 hover:text-red-300 text-sm flex items-center gap-1">
+                                            <Trash className="w-4 h-4" /> Remove Education
+                                        </button>
+                                    </DraggableItem>
+                                ))}
+                                <button 
+                                    onClick={() => addItem('education', { 
+                                        degree: 'Degree Name', 
+                                        institution: 'University Name', 
+                                        location: 'City, State', 
+                                        year: 'Year', 
+                                        details: 'GPA, Honors, Relevant Coursework' 
+                                    })}
+                                    className="w-full bg-green-600 px-4 py-3 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 font-semibold"
+                                >
+                                    <Plus className="w-5 h-5" /> Add Education
+                                </button>
+                            </div>
+                        </CollapsibleSection>
+                    )}
+
+                    {/* Projects Tab */}
+                    {activeTab === 'projects' && (
+                        <CollapsibleSection title="Projects">
+                            <div className="space-y-4">
+                                {data.projects.map((item, index) => (
+                                    <DraggableItem key={item.id} item={item} index={index} onMove={(from, to) => dispatch({ type: 'MOVE_ITEM', section: 'projects', fromIndex: from, toIndex: to })}>
+                                        <InputField label="Project Title" value={item.title} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'projects', id: item.id, payload: { title: e.target.value } })} />
+                                        <InputField label="Link (GitHub, Live Demo)" value={item.link} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'projects', id: item.id, payload: { link: e.target.value } })} />
+                                        <InputField label="Year" value={item.year} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'projects', id: item.id, payload: { year: e.target.value } })} />
+                                        <div className="mt-3">
+                                            <label className="block text-xs text-gray-400 uppercase tracking-wide mb-2">Project Details</label>
+                                            {item.description.map((point, i) => (
+                                                <div key={i} className="flex gap-2 mb-2">
+                                                    <textarea 
+                                                        rows="2"
+                                                        className="flex-1 bg-gray-700 p-2 rounded border border-gray-600 focus:border-blue-500 outline-none text-sm"
+                                                        value={point}
+                                                        onChange={(e) => dispatch({ type: 'UPDATE_BULLET_POINT', section: 'projects', id: item.id, index: i, value: e.target.value })}
+                                                        placeholder="Describe the project..."
+                                                    />
+                                                    <button onClick={() => dispatch({ type: 'REMOVE_BULLET_POINT', section: 'projects', id: item.id, index: i })} className="text-red-400 hover:text-red-300">
+                                                        <Trash className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <button onClick={() => dispatch({ type: 'ADD_BULLET_POINT', section: 'projects', id: item.id })} className="text-blue-400 text-sm hover:text-blue-300 flex items-center gap-1">
+                                                <Plus className="w-4 h-4" /> Add Detail
+                                            </button>
+                                        </div>
+                                        <button onClick={() => dispatch({ type: 'REMOVE_ITEM', section: 'projects', id: item.id })} className="text-red-400 hover:text-red-300 text-sm mt-2 flex items-center gap-1">
+                                            <Trash className="w-4 h-4" /> Remove Project
+                                        </button>
+                                    </DraggableItem>
+                                ))}
+                                <button 
+                                    onClick={() => addItem('projects', { 
+                                        title: 'Project Name', 
+                                        link: 'github.com/yourproject', 
+                                        year: '2024', 
+                                        description: ['Built something amazing...'] 
+                                    })}
+                                    className="w-full bg-green-600 px-4 py-3 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 font-semibold"
+                                >
+                                    <Plus className="w-5 h-5" /> Add Project
+                                </button>
+                            </div>
+                        </CollapsibleSection>
+                    )}
+
+                    {/* Certifications Tab */}
+                    {activeTab === 'certifications' && (
+                        <CollapsibleSection title="Certifications">
+                            <div className="space-y-4">
+                                {data.certifications.map((item, index) => (
+                                    <DraggableItem key={item.id} item={item} index={index} onMove={(from, to) => dispatch({ type: 'MOVE_ITEM', section: 'certifications', fromIndex: from, toIndex: to })}>
+                                        <InputField label="Certification Name" value={item.name} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'certifications', id: item.id, payload: { name: e.target.value } })} />
+                                        <InputField label="Issuing Organization" value={item.issuer} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'certifications', id: item.id, payload: { issuer: e.target.value } })} />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <InputField label="Year" value={item.year} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'certifications', id: item.id, payload: { year: e.target.value } })} />
+                                            <InputField label="Credential ID (Optional)" value={item.credentialId} onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'certifications', id: item.id, payload: { credentialId: e.target.value } })} />
+                                        </div>
+                                        <TextAreaField 
+                                            label="Details" 
+                                            value={item.details}
+                                            onChange={(e) => dispatch({ type: 'UPDATE_ITEM', section: 'certifications', id: item.id, payload: { details: e.target.value } })}
+                                            rows={2}
+                                        />
+                                        <button onClick={() => dispatch({ type: 'REMOVE_ITEM', section: 'certifications', id: item.id })} className="text-red-400 hover:text-red-300 text-sm flex items-center gap-1">
+                                            <Trash className="w-4 h-4" /> Remove Certification
+                                        </button>
+                                    </DraggableItem>
+                                ))}
+                                <button 
+                                    onClick={() => addItem('certifications', { 
+                                        name: 'Certification Name', 
+                                        issuer: 'Issuing Organization', 
+                                        year: '2024', 
+                                        details: 'Key skills demonstrated' 
+                                    })}
+                                    className="w-full bg-green-600 px-4 py-3 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 font-semibold"
+                                >
+                                    <Plus className="w-5 h-5" /> Add Certification
+                                </button>
+                            </div>
+                        </CollapsibleSection>
+                    )}
+
+                    {/* Settings Tab */}
+                    {activeTab === 'settings' && (
+                        <CollapsibleSection title="Resume Settings">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs text-gray-400 uppercase tracking-wide mb-2">Template Style</label>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {['modern', 'classic', 'minimalist'].map(template => (
+                                            <button 
+                                                key={template}
+                                                onClick={() => dispatch({ type: 'UPDATE_SETTINGS', payload: { template } })}
+                                                className={`p-3 rounded-lg border-2 capitalize ${
+                                                    data.settings.template === template 
+                                                        ? 'border-blue-500 bg-gray-700' 
+                                                        : 'border-gray-600 hover:border-gray-500'
+                                                }`}
+                                            >
+                                                {template}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-xs text-gray-400 uppercase tracking-wide mb-2">Primary Color</label>
+                                    <div className="flex gap-3">
+                                        {['#1f2937', '#2563eb', '#dc2626', '#059669', '#7c3aed'].map(color => (
+                                            <button 
+                                                key={color}
+                                                onClick={() => dispatch({ type: 'UPDATE_SETTINGS', payload: { primaryColor: color } })}
+                                                className={`w-10 h-10 rounded-lg border-2 ${
+                                                    data.settings.primaryColor === color ? 'border-white' : 'border-gray-600'
+                                                }`}
+                                                style={{ backgroundColor: color }}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs text-gray-400 uppercase tracking-wide mb-2">Font Size</label>
+                                    <select 
+                                        value={data.settings.fontSize}
+                                        onChange={(e) => dispatch({ type: 'UPDATE_SETTINGS', payload: { fontSize: e.target.value } })}
+                                        className="w-full bg-gray-700 p-3 rounded border border-gray-600"
+                                    >
+                                        <option value="text-xs">Small</option>
+                                        <option value="text-sm">Medium</option>
+                                        <option value="text-base">Large</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-xs text-gray-400 uppercase tracking-wide">Section Visibility</label>
+                                    {['showPhoto', 'showProjects', 'showCertifications', 'showSummary', 'showSkills'].map(setting => (
+                                        <label key={setting} className="flex items-center gap-3">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={data.settings[setting]}
+                                                onChange={(e) => dispatch({ type: 'UPDATE_SETTINGS', payload: { [setting]: e.target.checked } })}
+                                                className="w-4 h-4"
+                                            />
+                                            <span className="capitalize text-sm">{setting.replace('show', '')}</span>
+                                        </label>
+                                    ))}
+                                </div>
+
+                                <div className="bg-gray-700 p-4 rounded-lg">
+                                    <p className="text-xs text-gray-300">
+                                        <strong>Pro Tip:</strong> Use the "Classic" template for traditional industries, 
+                                        "Modern" for tech/creative roles, and "Minimalist" for clean, scannable resumes.
+                                    </p>
+                                </div>
+                            </div>
+                        </CollapsibleSection>
+                    )}
                 </div>
 
-                {/* --- Preview Column --- */}
-                <div className="lg:order-2 space-y-6 sticky top-8 h-[95vh] print-hidden">
-                    <div className="p-4 bg-gray-100 rounded-xl shadow-2xl min-h-[500px] overflow-y-auto h-full flex flex-col items-center">
-                        <h2 className="text-xl font-bold text-gray-800 mb-2">A4 Document Live Preview</h2>
-                        <div className="flex-1 w-full flex justify-center">
+                {/* Preview Panel */}
+                <div className="lg:col-span-1">
+                    <div className="sticky top-6">
+                        <div className="bg-gray-800 rounded-xl p-4 mb-4 flex justify-between items-center">
+                            <h3 className="text-lg font-semibold">Live Preview</h3>
+                            <span className="text-xs text-gray-400">A4 Format</span>
+                        </div>
+                        <div className="overflow-auto max-h-screen custom-scrollbar bg-gray-900 p-4 rounded-xl">
                             <ResumePreview data={data} ref={previewRef} />
                         </div>
                     </div>
