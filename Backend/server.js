@@ -6,7 +6,7 @@ import http from "http";
 import { Server } from "socket.io";
 import connectDB from "./config/db.js";
 
-// Models (Import these to handle Room persistence)
+// Models
 import Room from "./models/room.js"; 
 
 // Routes
@@ -19,6 +19,7 @@ import { socketController } from "./controllers/socket.controller.js";
 
 dotenv.config();
 const app = express();
+const __dirname = path.resolve(); // Resolves the root directory
 
 /* ---------------- DATABASE ---------------- */
 connectDB();
@@ -44,19 +45,13 @@ app.use((req, res, next) => {
   next();
 });
 
-/* ---------------- STATIC ---------------- */
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
-/* ---------------- ROUTES ---------------- */
+/* ---------------- API ROUTES ---------------- */
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1", uploadRoutes);
 app.use("/api/v1", BlogRoute);
 app.use("/api/qna", qnaRoutes);
 app.use("/api/v1/user", userProfile);
 
-/** * NEW: Chat Room Management Routes
- * This allows the frontend to save and load study groups
- */
 app.get("/api/v1/rooms", async (req, res) => {
   try {
     const rooms = await Room.find().sort({ createdAt: -1 });
@@ -70,19 +65,28 @@ app.post("/api/v1/rooms", async (req, res) => {
   try {
     const { name } = req.body;
     if (!name) return res.status(400).json({ message: "Room name is required" });
-
     const roomId = name.toLowerCase().replace(/\s+/g, "-");
     const newRoom = new Room({ id: roomId, name });
     await newRoom.save();
-    
     res.status(201).json(newRoom);
   } catch (err) {
     res.status(500).json({ success: false, message: "Error creating room" });
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("Backend is running 🚀");
+/* ---------------- STATIC FILES & DEPLOYMENT ---------------- */
+// 1. Serve 'uploads' folder
+app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
+
+// 2. Serve React Frontend (Assumes your build folder is named 'dist')
+// Change "frontend/dist" to match your actual folder structure (e.g., "client/dist" or just "dist")
+app.use(express.static(path.join(__dirname, "/frontend/dist")));
+
+// 3. THE FIX: Catch-all route to serve React's index.html
+app.get("*", (req, res, next) => {
+  // Ignore API routes so they don't accidentally return index.html
+  if (req.url.startsWith("/api")) return next();
+  res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
 });
 
 /* ---------------- HTTP SERVER ---------------- */
@@ -97,21 +101,16 @@ const io = new Server(server, {
   },
 });
 
-// Initialize Socket Controller
 socketController(io);
 
 /* ---------------- ERROR HANDLERS ---------------- */
-app.use((req, res) => {
-  res.status(404).json({ success: false, message: "Route not found" });
-});
-
 app.use((err, req, res, next) => {
   console.error("Global Error:", err.stack);
   res.status(500).json({ success: false, message: "Server Error" });
 });
 
 /* ---------------- START SERVER ---------------- */
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
   console.log(`🚀 Server + Socket.IO running on port ${PORT}`);
 });
