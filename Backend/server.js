@@ -6,6 +6,7 @@ import http from "http";
 import { Server } from "socket.io";
 import connectDB from "./config/db.js";
 
+// Routes
 import userRoutes from "./routes/User.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import BlogRoute from "./routes/Blog.routes.js";
@@ -19,9 +20,11 @@ const app = express();
 connectDB();
 
 /* ---------------- MIDDLEWARE ---------------- */
+const allowedOrigins = ["http://localhost:5173", "https://edumedia-hub-2.onrender.com"];
+
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://edumedia-hub-2.onrender.com"],
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -31,6 +34,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Logging Middleware
 app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.url}`);
   next();
@@ -54,18 +58,34 @@ app.get("/", (req, res) => {
 const server = http.createServer(app);
 
 /* ---------------- SOCKET.IO ---------------- */
+// Consolidated CORS to match Express config
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
   },
 });
+
+
 
 io.on("connection", (socket) => {
   console.log("🟢 User connected:", socket.id);
 
-  socket.on("sendMessage", (message) => {
-    console.log("📩 Message received:", message);
-    io.emit("receiveMessage", message);
+  // Use a specific listener for chat messages
+  socket.on("sendMessage", (data) => {
+    console.log("📩 Message received:", data);
+
+    // Add a unique ID and Timestamp on the server side
+    const messagePayload = {
+      id: Date.now() + Math.random(), // Unique key for React lists
+      user: data.user || "Anonymous",
+      text: data.text,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    // io.emit sends it to everyone, including the sender
+    io.emit("receiveMessage", messagePayload);
   });
 
   socket.on("disconnect", () => {
@@ -84,7 +104,7 @@ app.use((err, req, res, next) => {
 });
 
 /* ---------------- START SERVER ---------------- */
-const PORT = process.env.PORT || 4000;
+const PORT =  4000;
 server.listen(PORT, () => {
   console.log(`🚀 Server + Socket.IO running on port ${PORT}`);
 });
