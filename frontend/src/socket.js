@@ -1,11 +1,16 @@
 import { io } from "socket.io-client";
 
-// Use the environment variable port or default to 4000 to match your server
-const URL = "http://localhost:4000"; 
+// This detects if the app is running on Render or locally
+const URL = window.location.hostname === "localhost" 
+  ? "http://localhost:4000" 
+  : "https://edumedia-hub-2.onrender.com";
 
 const socket = io(URL, {
   withCredentials: true,
   autoConnect: true,
+  // High-performance settings for production
+  transports: ["websocket", "polling"], 
+  reconnectionAttempts: 5,
 });
 
 export default socket;

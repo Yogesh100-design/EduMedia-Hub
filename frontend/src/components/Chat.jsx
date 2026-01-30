@@ -16,7 +16,7 @@ const Chat = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const response = await fetch("http://localhost:4000/api/v1/rooms");
+        const response = await fetch("/api/v1/rooms");
         const data = await response.json();
         if (data && data.length > 0) {
           setGroups(data);
@@ -65,7 +65,7 @@ const Chat = () => {
     if (!newGroupName.trim()) return;
 
     try {
-      const response = await fetch("http://localhost:4000/api/v1/rooms", {
+      const response = await fetch("/api/v1/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newGroupName }),
