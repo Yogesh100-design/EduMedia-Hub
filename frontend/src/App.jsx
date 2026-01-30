@@ -23,6 +23,7 @@ import CompanyReview from './components/ComponyReview'
 import SalaryInsights from './components/SalaryInsighs'
 import AboutPage from './components/About'
 import QandABoard from './components/Quetions'
+import Chat from './components/Chat'
 
 
 function App() {
@@ -53,6 +54,7 @@ function App() {
         <Route path='/salary-insights' element={<SalaryInsights/>} />
         <Route path='/About' element={<AboutPage/>} />
         <Route path='/EduQ&A' element={<QandABoard/>} />
+        <Route path='/chat' element={<Chat/>} />
       </Routes>
       <Footer />
     </>
