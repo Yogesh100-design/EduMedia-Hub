@@ -6,12 +6,16 @@ import http from "http";
 import { Server } from "socket.io";
 import connectDB from "./config/db.js";
 
+// Models (Import these to handle Room persistence)
+import Room from "./models/room.js"; 
+
 // Routes
 import userRoutes from "./routes/User.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import BlogRoute from "./routes/Blog.routes.js";
 import qnaRoutes from "./routes/qnaRoutes.js";
 import userProfile from "./routes/userProfile.routes.js";
+import { socketController } from "./controllers/socket.controller.js";
 
 dotenv.config();
 const app = express();
@@ -50,6 +54,33 @@ app.use("/api/v1", BlogRoute);
 app.use("/api/qna", qnaRoutes);
 app.use("/api/v1/user", userProfile);
 
+/** * NEW: Chat Room Management Routes
+ * This allows the frontend to save and load study groups
+ */
+app.get("/api/v1/rooms", async (req, res) => {
+  try {
+    const rooms = await Room.find().sort({ createdAt: -1 });
+    res.status(200).json(rooms);
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error fetching rooms" });
+  }
+});
+
+app.post("/api/v1/rooms", async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ message: "Room name is required" });
+
+    const roomId = name.toLowerCase().replace(/\s+/g, "-");
+    const newRoom = new Room({ id: roomId, name });
+    await newRoom.save();
+    
+    res.status(201).json(newRoom);
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error creating room" });
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
@@ -58,7 +89,6 @@ app.get("/", (req, res) => {
 const server = http.createServer(app);
 
 /* ---------------- SOCKET.IO ---------------- */
-// Consolidated CORS to match Express config
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -67,31 +97,8 @@ const io = new Server(server, {
   },
 });
 
-
-
-io.on("connection", (socket) => {
-  console.log("🟢 User connected:", socket.id);
-
-  // Use a specific listener for chat messages
-  socket.on("sendMessage", (data) => {
-    console.log("📩 Message received:", data);
-
-    // Add a unique ID and Timestamp on the server side
-    const messagePayload = {
-      id: Date.now() + Math.random(), // Unique key for React lists
-      user: data.user || "Anonymous",
-      text: data.text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    // io.emit sends it to everyone, including the sender
-    io.emit("receiveMessage", messagePayload);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("🔴 User disconnected:", socket.id);
-  });
-});
+// Initialize Socket Controller
+socketController(io);
 
 /* ---------------- ERROR HANDLERS ---------------- */
 app.use((req, res) => {
@@ -104,7 +111,7 @@ app.use((err, req, res, next) => {
 });
 
 /* ---------------- START SERVER ---------------- */
-const PORT =  4000;
+const PORT = 4000;
 server.listen(PORT, () => {
   console.log(`🚀 Server + Socket.IO running on port ${PORT}`);
 });
