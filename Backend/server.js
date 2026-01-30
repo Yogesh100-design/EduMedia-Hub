@@ -7,6 +7,7 @@ import userRoutes from "./routes/User.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import BlogRoute from "./routes/Blog.routes.js";
 import qnaRoutes from "./routes/qnaRoutes.js";
+import userProfile from "./routes/userProfile.routes.js"
 
 dotenv.config();
 const app = express();
@@ -45,6 +46,7 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1", uploadRoutes);
 app.use("/api/v1", BlogRoute);
 app.use("/api/qna", qnaRoutes);
+app.use("/api/v1/user",userProfile)  
 
 // Test Route
 app.get("/", (req, res) => {
