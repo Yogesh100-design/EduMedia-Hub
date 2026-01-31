@@ -36,7 +36,7 @@ const Chat = () => {
   // 3. ROOM JOINING & HISTORY
   useEffect(() => {
     socket.emit("joinRoom", activeRoom);
-    setMessages([]); // Clear current view while switching
+    setMessages([]); 
     
     // The backend 'joinRoom' event now triggers this
     socket.on("loadMessages", (history) => {
