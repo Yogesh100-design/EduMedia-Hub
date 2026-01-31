@@ -86,16 +86,6 @@ app.post("/api/v1/rooms", async (req, res) => {
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.static(path.join(__dirname, "frontend", "dist")));
 
-/* ---------------- REACT SPA FALLBACK (IMPORTANT) ---------------- */
-app.get("/*", (req, res) => {
-  if (req.originalUrl.startsWith("/api")) {
-    return res.status(404).json({ message: "API route not found" });
-  }
-
-  res.sendFile(
-    path.join(__dirname, "frontend", "dist", "index.html")
-  );
-});
 
 
 /* ---------------- HTTP SERVER ---------------- */
