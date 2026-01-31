@@ -110,7 +110,7 @@ app.use((err, req, res, next) => {
 });
 
 /* ---------------- START SERVER ---------------- */
-const PORT =  4000;
+const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
   console.log(`🚀 Server + Socket.IO running on port ${PORT}`);
 });
