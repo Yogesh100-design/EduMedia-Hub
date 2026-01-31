@@ -203,6 +203,9 @@ export default function TeacherDashboard() {
             <Link to="/teacher-post" className="bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 rounded-2xl font-bold hover:scale-105 transition shadow-lg shadow-purple-500/20">
               + Create Post
             </Link>
+            <Link to="/chat" className="bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 rounded-2xl font-bold hover:scale-105 transition shadow-lg shadow-purple-500/20">
+              + join
+            </Link>
           </header>
 
           {loading ? (
