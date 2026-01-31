@@ -83,11 +83,11 @@ app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
 app.use(express.static(path.join(__dirname, "/frontend/dist")));
 
 // 3. THE FIX: Catch-all route to serve React's index.html
-app.get("*", (req, res, next) => {
-  // Ignore API routes so they don't accidentally return index.html
+app.use((req, res, next) => {
   if (req.url.startsWith("/api")) return next();
   res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
 });
+
 
 /* ---------------- HTTP SERVER ---------------- */
 const server = http.createServer(app);
@@ -110,7 +110,7 @@ app.use((err, req, res, next) => {
 });
 
 /* ---------------- START SERVER ---------------- */
-const PORT = process.env.PORT || 4000;
+const PORT =  4000;
 server.listen(PORT, () => {
   console.log(`🚀 Server + Socket.IO running on port ${PORT}`);
 });
