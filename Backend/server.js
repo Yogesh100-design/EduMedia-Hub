@@ -25,7 +25,7 @@ const __dirname = path.resolve();
 /* ---------------- DATABASE ---------------- */
 connectDB();
 
-/* ---------------- MIDDLEWARE ---------------- */
+/* ---------------- CORS ---------------- */
 const allowedOrigins = [
   "http://localhost:5173",
   "https://edumedia-hub-2.onrender.com",
@@ -34,9 +34,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: allowedOrigins,
-    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -61,7 +59,7 @@ app.get("/api/v1/rooms", async (req, res) => {
   try {
     const rooms = await Room.find().sort({ createdAt: -1 });
     res.status(200).json(rooms);
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Error fetching rooms" });
   }
 });
@@ -69,34 +67,29 @@ app.get("/api/v1/rooms", async (req, res) => {
 app.post("/api/v1/rooms", async (req, res) => {
   try {
     const { name } = req.body;
-    if (!name)
+    if (!name) {
       return res.status(400).json({ message: "Room name is required" });
+    }
 
     const roomId = name.toLowerCase().replace(/\s+/g, "-");
     const newRoom = new Room({ id: roomId, name });
-
     await newRoom.save();
+
     res.status(201).json(newRoom);
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Error creating room" });
   }
 });
-
-/* ---------------- STATIC FILES ---------------- */
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use(express.static(path.join(__dirname, "frontend", "dist")));
-
-
 
 /* ---------------- HTTP SERVER ---------------- */
 const server = http.createServer(app);
 
 /* ---------------- SOCKET.IO ---------------- */
 const io = new Server(server, {
+  path: "/socket.io",
   cors: {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
-    credentials: true,
   },
 });
 
